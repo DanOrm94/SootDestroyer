@@ -6,6 +6,10 @@ if(menu&&nav){
     menu.setAttribute("aria-expanded",String(open));
   });
 }
+if(nav&&!nav.querySelector('a[href="show-room.html"]')){
+  const link=document.createElement("a");link.href="show-room.html";link.textContent="Show Room";
+  const cta=nav.querySelector(".nav-cta");nav.insertBefore(link,cta||null);
+}
 document.querySelectorAll(".header nav a").forEach(a=>a.addEventListener("click",()=>{
   nav?.classList.remove("open");
   menu?.setAttribute("aria-expanded","false");
