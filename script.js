@@ -58,3 +58,10 @@ window.addEventListener("scroll", () => {
   else header.classList.remove("scrolled");
   lastScroll = y;
 }, { passive: true });
+
+// Use the uploaded Soot Destroyer logo in the homepage hero image block.
+const heroLogo = document.querySelector('.hero-photo img');
+if (heroLogo && window.location.pathname.endsWith('/index.html')) {
+  heroLogo.src = 'sootlogo.jpg';
+  heroLogo.alt = 'Soot Destroyer logo';
+}
