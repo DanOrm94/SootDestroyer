@@ -25,6 +25,15 @@ if (nav) {
     const cta = nav.querySelector(".nav-cta");
     nav.insertBefore(link, cta || null);
   }
+  if (!nav.querySelector('a[href="https://www.nacs.org.uk/"]')) {
+    const link = document.createElement("a");
+    link.href = "https://www.nacs.org.uk/";
+    link.textContent = "NACS";
+    link.target = "_blank";
+    link.rel = "noopener noreferrer";
+    const cta = nav.querySelector(".nav-cta");
+    nav.insertBefore(link, cta || null);
+  }
 }
 
 menuToggle?.addEventListener("click", () => {
@@ -77,7 +86,6 @@ window.addEventListener("scroll", () => {
   lastScroll = y;
 }, { passive: true });
 
-// Use the uploaded Soot Destroyer logo in the homepage hero image block.
 const heroLogo = document.querySelector('.hero-photo img');
 if (heroLogo && window.location.pathname.endsWith('/index.html')) {
   heroLogo.src = 'sootlogo.jpg';
