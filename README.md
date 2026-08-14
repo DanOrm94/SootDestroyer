@@ -15,6 +15,9 @@ All pages are in the repository root. There are no folders.
 - stove-packages.html — stove packages
 - pricing.html — pricing
 - gallery.html — recent work
+- show-room.html — modern showroom slideshow
+- show-room.css — showroom styling
+- show-room.js — showroom slideshow JavaScript
 - reviews.html — reviews
 - areas.html — service areas
 - about.html — about
@@ -26,6 +29,19 @@ All pages are in the repository root. There are no folders.
 - terms.html — terms template
 - site.css — shared page styling
 - site.js — shared page JavaScript
+
+## Show Room photos
+
+Upload showroom images into the repository root using these filenames:
+
+- showroom-1.jpg
+- showroom-2.jpg
+- showroom-3.jpg
+- showroom-4.jpg
+- showroom-5.jpg
+- and so on, up to showroom-20.jpg
+
+The Show Room page automatically detects which images exist, builds the thumbnails and starts the slideshow. JPG is recommended for the best balance of quality and loading speed.
 
 ## Important before launch
 
