@@ -9,6 +9,11 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Manrope:wght@600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="styles.css">
+  <style>
+    .brand-logo{width:48px;height:48px;display:block;object-fit:contain;border-radius:10px;flex:0 0 48px}
+    .hero-photo img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:center;display:block}
+    @media(max-width:700px){.brand-logo{width:42px;height:42px;flex-basis:42px}.hero-photo img{object-fit:cover}}
+  </style>
 </head>
 <body>
   <div class="announcement"><div class="container announcement-inner"><span>Trusted local chimney & stove specialists</span><a href="booking.html">Book a sweep <span>→</span></a></div></div>
