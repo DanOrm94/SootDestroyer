@@ -1,6 +1,14 @@
 const menuToggle = document.querySelector(".menu-toggle");
 const nav = document.querySelector(".nav");
 
+if (nav && !nav.querySelector('a[href="show-room.html"]')) {
+  const link = document.createElement("a");
+  link.href = "show-room.html";
+  link.textContent = "Show Room";
+  const cta = nav.querySelector(".nav-cta");
+  nav.insertBefore(link, cta || null);
+}
+
 menuToggle?.addEventListener("click", () => {
   const open = nav.classList.toggle("open");
   menuToggle.setAttribute("aria-expanded", String(open));
