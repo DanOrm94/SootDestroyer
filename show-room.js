@@ -2,7 +2,6 @@ const slides = Array.from({length: 20}, (_, i) => ({file:`showroom-${i + 1}.jpg`
 const stage=document.querySelector('#showroomSlideshow');
 const image=document.querySelector('#slideImage');
 const empty=document.querySelector('#slideEmpty');
-const counter=document.querySelector('#slideCounter');
 const title=document.querySelector('#slideTitle');
 const subtitle=document.querySelector('#slideSubtitle');
 const thumbs=document.querySelector('#thumbs');
@@ -26,11 +25,11 @@ async function buildGallery(){
   });
   showSlide(0);start();
 }
-function showEmpty(){image.style.display='none';empty.classList.add('show');counter.textContent='00 / 00';title.textContent='Your photos go here';subtitle.textContent='Upload showroom-1.jpg, showroom-2.jpg and so on';}
+function showEmpty(){image.style.display='none';empty.classList.add('show');title.textContent='Your photos go here';subtitle.textContent='Upload your showroom images';}
 function showSlide(i){
   index=(i+slides.length)%slides.length;const slide=slides[index];
   image.classList.add('fade');
-  setTimeout(()=>{image.src=slide.file;image.alt=`Soot Destroyer showroom — ${slide.title}`;title.textContent=slide.title;subtitle.textContent=slide.subtitle;counter.textContent=`${String(index+1).padStart(2,'0')} / ${String(slides.length).padStart(2,'0')}`;progress.style.width=`${((index+1)/slides.length)*100}%`;image.classList.remove('fade');},160);
+  setTimeout(()=>{image.src=slide.file;image.alt=`Soot Destroyer showroom — ${slide.title}`;title.textContent=slide.title;subtitle.textContent=slide.subtitle;progress.style.width=`${((index+1)/slides.length)*100}%`;image.classList.remove('fade');},160);
   document.querySelectorAll('.thumb').forEach((el,n)=>el.classList.toggle('active',n===index));document.querySelectorAll('.dot-button').forEach((el,n)=>el.classList.toggle('active',n===index));
 }
 function goTo(i){showSlide(i);restart();}
