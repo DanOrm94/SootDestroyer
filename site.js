@@ -19,6 +19,10 @@ if(nav){
     const link=document.createElement("a");link.href="https://burnright.co.uk/";link.textContent="BurnRight";link.target="_blank";link.rel="noopener noreferrer";
     const cta=nav.querySelector(".nav-cta");nav.insertBefore(link,cta||null);
   }
+  if(!nav.querySelector('a[href="https://www.nacs.org.uk/"]')){
+    const link=document.createElement("a");link.href="https://www.nacs.org.uk/";link.textContent="NACS";link.target="_blank";link.rel="noopener noreferrer";
+    const cta=nav.querySelector(".nav-cta");nav.insertBefore(link,cta||null);
+  }
 }
 document.querySelectorAll(".header nav a").forEach(a=>a.addEventListener("click",()=>{
   nav?.classList.remove("open");
