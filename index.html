@@ -12,11 +12,38 @@
   <style>
     .brand-logo{width:48px;height:48px;display:block;object-fit:contain;border-radius:10px;flex:0 0 48px}
     .hero-photo img{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;object-position:center;display:block;background:#f4f1e9}
-    .hero-card-foot{display:none}
-    .hero-card{border-radius:28px;overflow:hidden}
+    .hero-card-foot{display:none}.hero-card{border-radius:28px;overflow:hidden}
     .split-image{background:#f4f1e9;display:flex;align-items:center;justify-content:center;position:relative;overflow:hidden}
     .split-image::before,.split-image::after{display:none}
     .split-image-photo{width:72%;height:72%;object-fit:contain;object-position:center;display:block;border-radius:18px}
+    /* Soot Destroyer brand finish */
+    body{background:#f3efe5;position:relative}
+    body:before{content:"";position:fixed;inset:0;pointer-events:none;z-index:999;background-image:radial-gradient(rgba(35,30,24,.045) .7px,transparent .7px);background-size:5px 5px;opacity:.16}
+    .site-header{background:rgba(247,244,236,.82);box-shadow:0 1px 0 rgba(55,42,31,.04)}
+    .announcement{background:#1d1c19}
+    .announcement a{color:#e6a16f}
+    .brand strong{color:#1d1c19}.brand small{letter-spacing:.15em}
+    .hero{background:linear-gradient(135deg,#f5f1e7 0%,#f0ece1 58%,#e5dfd1 100%)}
+    .hero:after{content:"";position:absolute;width:420px;height:420px;right:24%;bottom:-280px;border-radius:50%;background:rgba(197,111,57,.08);filter:blur(12px);pointer-events:none}
+    .hero-bg{background:radial-gradient(circle,#d8dfd1 0,#ebe7db 48%,transparent 72%)}
+    .eyebrow,.kicker{color:#b85f2f}
+    h1,h2,h3{font-family:Manrope,sans-serif}
+    h1 em,h2 em{color:#b85f2f}
+    .btn-primary{background:#b85f2f;box-shadow:0 10px 24px rgba(184,95,47,.18)}
+    .btn-primary:hover{background:#91451f;box-shadow:0 14px 30px rgba(145,69,31,.2)}
+    .btn-ghost{background:rgba(255,253,248,.58);border-color:#d6cfc1}
+    .hero-card{background:#ebe5d8;box-shadow:0 28px 70px rgba(43,34,26,.16);transform:rotate(.7deg)}
+    .hero-photo{background:#ebe5d8}
+    .trust-strip{background:#22211e}
+    .service-card,.hero-card,.booking-form{box-shadow:0 22px 60px rgba(45,35,27,.1)}
+    .service-accent{background:#b96535}
+    .split-section{background:#dedfd4}
+    .split-image{background:#dedbd0}
+    .image-overlay-card{box-shadow:0 14px 35px rgba(45,35,27,.12);backdrop-filter:blur(8px)}
+    .areas{background:#e8e9df}
+    .booking-section{background:linear-gradient(135deg,#d9dfd3,#e8e8dd)}
+    .footer{background:#1c1d1b}
+    .footer h4{color:#e7a06e}
     @media(max-width:700px){.brand-logo{width:42px;height:42px;flex-basis:42px}.hero-photo img{object-fit:contain}.split-image-photo{width:82%;height:82%}}
   </style>
 </head>
