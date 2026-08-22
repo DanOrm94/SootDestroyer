@@ -33,13 +33,23 @@
       const link=document.createElement('a');link.href='https://www.nacs.org.uk/';link.textContent='NACS';link.target='_blank';link.rel='noopener noreferrer';
       const cta=nav.querySelector('.nav-cta');nav.insertBefore(link,cta||null);
     }
-
-    // Make every Book now button jump straight to the main contact form.
-    const bookButton=nav.querySelector('.nav-cta');
-    if(bookButton){
-      bookButton.href=location.pathname.endsWith('/index.html')||location.pathname==='/'?'#booking':'index.html#booking';
-    }
   }
+
+  // Make every Book now / booking.html navigation link jump to the contact form.
+  document.querySelectorAll('a[href="booking.html"], a[href="/booking.html"]').forEach(link=>{
+    link.addEventListener('click',e=>{
+      e.preventDefault();
+      if(location.pathname.endsWith('/index.html') || location.pathname.endsWith('/')){
+        const target=document.getElementById('booking');
+        if(target) target.scrollIntoView({behavior:'smooth',block:'start'});
+      }else{
+        window.location.href='index.html#booking';
+      }
+      nav?.classList.remove('open');
+      menu?.setAttribute('aria-expanded','false');
+    });
+  });
+
   document.querySelectorAll('.header nav a').forEach(a=>a.addEventListener('click',()=>{
     nav?.classList.remove('open');
     menu?.setAttribute('aria-expanded','false');
