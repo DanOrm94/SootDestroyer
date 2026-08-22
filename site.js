@@ -8,6 +8,14 @@
     document.head.appendChild(style);
   }
 
+  if(!document.querySelector('link[data-logo-blend]')){
+    const logoStyle=document.createElement('link');
+    logoStyle.rel='stylesheet';
+    logoStyle.href='logo-blend.css';
+    logoStyle.dataset.logoBlend='true';
+    document.head.appendChild(logoStyle);
+  }
+
   const menu=document.querySelector('.menu'),nav=document.querySelector('.header nav');
   if(menu&&nav){
     menu.setAttribute('aria-expanded','false');
