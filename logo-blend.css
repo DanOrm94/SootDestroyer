@@ -1,0 +1,19 @@
+/* Blend the non-transparent JPG logo into the warm site header. */
+.site-header .brand-logo,
+.header .brand img[alt="Soot Destroyer"] {
+  mix-blend-mode: multiply;
+  background: transparent;
+  border-radius: 10px;
+}
+
+.site-header,
+.header {
+  background-color: #f4f1e9;
+}
+
+@media (max-width: 700px) {
+  .site-header .brand-logo,
+  .header .brand img[alt="Soot Destroyer"] {
+    mix-blend-mode: multiply;
+  }
+}
