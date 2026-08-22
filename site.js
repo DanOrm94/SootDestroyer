@@ -33,6 +33,12 @@
       const link=document.createElement('a');link.href='https://www.nacs.org.uk/';link.textContent='NACS';link.target='_blank';link.rel='noopener noreferrer';
       const cta=nav.querySelector('.nav-cta');nav.insertBefore(link,cta||null);
     }
+
+    // Make every Book now button jump straight to the main contact form.
+    const bookButton=nav.querySelector('.nav-cta');
+    if(bookButton){
+      bookButton.href=location.pathname.endsWith('/index.html')||location.pathname==='/'?'#booking':'index.html#booking';
+    }
   }
   document.querySelectorAll('.header nav a').forEach(a=>a.addEventListener('click',()=>{
     nav?.classList.remove('open');
