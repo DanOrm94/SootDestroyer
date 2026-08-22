@@ -1,6 +1,15 @@
 const menuToggle = document.querySelector(".menu-toggle");
 const nav = document.querySelector(".nav");
 
+// Blend the JPG logo into the warm header background.
+if (!document.querySelector('link[data-logo-blend]')) {
+  const logoStyle = document.createElement('link');
+  logoStyle.rel = 'stylesheet';
+  logoStyle.href = 'logo-blend.css';
+  logoStyle.dataset.logoBlend = 'true';
+  document.head.appendChild(logoStyle);
+}
+
 if (nav) {
   if (!nav.querySelector('a[href="show-room.html"]')) {
     const link = document.createElement("a"); link.href="show-room.html"; link.textContent="Show Room";
