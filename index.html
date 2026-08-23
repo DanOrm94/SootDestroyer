@@ -11,8 +11,10 @@
   <link rel="stylesheet" href="styles.css">
   <style>
     .brand-logo{width:48px;height:48px;display:block;object-fit:contain;border-radius:10px;flex:0 0 48px}
-    .hero-photo img{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;object-position:center;display:block;background:#f4f1e9}
-    .hero-card-foot{display:none}.hero-card{border-radius:28px;overflow:hidden}
+    .hero-card{border-radius:28px;overflow:hidden}
+    .hero-photo{height:auto;line-height:0;background:#f4f1e9;overflow:hidden}
+    .hero-photo img{position:static;width:100%;height:auto;max-width:100%;display:block;object-fit:contain;object-position:center;background:#f4f1e9}
+    .hero-card-foot{display:none}
     .split-image{background:#f4f1e9;display:flex;align-items:center;justify-content:center;position:relative;overflow:hidden}
     .split-image::before,.split-image::after{display:none}
     .split-image-photo{width:72%;height:72%;object-fit:contain;object-position:center;display:block;border-radius:18px}
