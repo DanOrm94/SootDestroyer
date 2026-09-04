@@ -1,27 +1,207 @@
 <!doctype html>
-<html lang="en"><head>
-<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
-<meta name="description" content="Request a stove installation quote from Soot Destroyer.">
-<title>Get a Stove Quote | Soot Destroyer</title>
-<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="Build an instant stove installation quote from Soot Destroyer.">
+<title>Instant Stove Installation Quote | Soot Destroyer</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Manrope:wght@600;700;800&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="site.css"></head><body>
-<div class="topbar"><div class="container topbar-inner"><span>Professional chimney & stove specialists</span><a href="quote.html">Request a quote →</a></div></div>
+<link rel="stylesheet" href="site.css">
+<style>
+  .quote-shell{padding:clamp(28px,5vw,64px) 0 80px}
+  .quote-intro{max-width:780px;margin:0 auto 30px;text-align:center}
+  .quote-intro .lead{max-width:650px;margin:16px auto 0}
+  .package-deal{max-width:900px;margin:0 auto 36px;padding:26px 28px;border:1px solid rgba(180,101,52,.24);border-radius:20px;background:linear-gradient(135deg,rgba(180,101,52,.10),rgba(255,255,255,.76));box-shadow:0 16px 40px rgba(31,24,19,.07)}
+  .package-deal h2{margin:0 0 14px;color:var(--ink)}
+  .package-deal ul{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px 28px;margin:0;padding:0;list-style:none}
+  .package-deal li{position:relative;padding-left:23px;color:var(--muted);font-size:14px;line-height:1.5}
+  .package-deal li::before{content:'✓';position:absolute;left:0;top:0;color:var(--accent);font-weight:800}
+  .quote-form{max-width:1000px;margin:0 auto}
+  .quote-card{padding:28px;border:1px solid var(--line);border-radius:22px;background:rgba(255,255,255,.72);box-shadow:0 18px 50px rgba(31,24,19,.07);margin-bottom:24px}
+  .quote-card h2{margin:0 0 7px;font-size:24px}
+  .quote-card .section-copy{margin:0 0 22px;color:var(--muted);font-size:13px}
+  .option-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px}
+  .option{position:relative;cursor:pointer}
+  .option input{position:absolute;opacity:0;pointer-events:none}
+  .option label{display:block;height:100%;cursor:pointer}
+  .option-visual{position:relative;overflow:hidden;aspect-ratio:1/1;border:2px solid transparent;border-radius:16px;background:#f4f1ec;transition:transform .2s ease,border-color .2s ease,box-shadow .2s ease}
+  .option-visual img{display:block;width:100%;height:100%;object-fit:cover;transition:transform .35s ease}
+  .option:hover .option-visual{transform:translateY(-3px);box-shadow:0 12px 24px rgba(31,24,19,.10)}
+  .option:hover img{transform:scale(1.04)}
+  .option input:checked + label .option-visual{border-color:var(--accent);box-shadow:0 0 0 3px rgba(180,101,52,.13)}
+  .option-copy{padding:9px 3px 0;text-align:center}
+  .option-name{display:block;font-weight:700;font-size:13px;line-height:1.35;color:var(--ink)}
+  .option-price{display:block;margin-top:3px;font-size:12px;color:var(--muted)}
+  .choice-image{cursor:zoom-in}
+  .contact-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}
+  .field{display:block}
+  .field.full{grid-column:1/-1}
+  .field span{display:block;margin-bottom:7px;font-size:12px;font-weight:700;color:var(--ink)}
+  .field input{width:100%;box-sizing:border-box;padding:13px 14px;border:1px solid var(--line);border-radius:12px;background:#fff;color:var(--ink);font:inherit;outline:none;transition:border-color .2s ease,box-shadow .2s ease}
+  .field input:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(180,101,52,.12)}
+  .quote-summary{position:sticky;bottom:16px;z-index:10;display:flex;align-items:center;justify-content:space-between;gap:20px;margin:28px auto 0;max-width:1000px;padding:18px 20px;border:1px solid rgba(31,24,19,.12);border-radius:18px;background:rgba(255,255,255,.94);box-shadow:0 18px 45px rgba(31,24,19,.14);backdrop-filter:blur(12px)}
+  .quote-total-label{font-size:11px;text-transform:uppercase;letter-spacing:.12em;color:var(--muted);font-weight:700}
+  .quote-total{font-family:Manrope,sans-serif;font-size:28px;font-weight:800;color:var(--ink);margin-top:2px}
+  .submit-btn{border:0;cursor:pointer}
+  .form-note{margin:12px 0 0;color:var(--muted);font-size:11px;line-height:1.5}
+  .lightbox{position:fixed;inset:0;display:none;place-items:center;padding:24px;background:rgba(15,12,10,.78);z-index:9999}
+  .lightbox.open{display:grid}
+  .lightbox img{max-width:min(95vw,1100px);max-height:90vh;border-radius:16px;box-shadow:0 25px 70px rgba(0,0,0,.45)}
+  .lightbox__close{position:absolute;top:18px;right:18px;border:0;border-radius:999px;padding:10px 14px;background:#fff;color:#211b17;font-weight:700;cursor:pointer}
+  @media(max-width:850px){.option-grid{grid-template-columns:repeat(3,minmax(0,1fr))}}
+  @media(max-width:620px){.package-deal ul,.contact-grid{grid-template-columns:1fr}.option-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.quote-card{padding:20px}.quote-summary{align-items:stretch;flex-direction:column}.quote-summary .btn{width:100%;justify-content:center}}
+</style>
+</head>
+<body>
+<div class="topbar"><div class="container topbar-inner"><span>Professional chimney & stove specialists</span><a href="quote.html">Build your stove quote →</a></div></div>
 <header class="header"><div class="container nav-wrap">
-<a class="brand" href="index.html"><span class="mark">SD</span><span><strong>Soot</strong> Destroyer<small>Chimney & Stove Specialists</small></span></a>
+<a class="brand" href="index.html"><img class="brand-mark" src="sootlogo.jpg" alt="Soot Destroyer"><span><strong>Soot</strong> Destroyer<small>Chimney & Stove Specialists</small></span></a>
 <button class="menu" aria-label="Toggle navigation"><i></i><i></i><i></i></button>
 <nav>
-<a href="services.html">Services</a><a href="gallery.html">Our work</a><a href="reviews.html">Reviews</a><a href="areas.html">Areas</a><a href="about.html">About</a><a class="nav-cta" href="booking.html">Book now</a>
+<a href="services.html">Services</a><a href="gallery.html">Our work</a><a href="stove-packages.html">Stove packages</a><a href="reviews.html">Reviews</a><a href="areas.html">Areas</a><a href="about.html">About</a><a class="nav-cta" href="booking.html">Book now</a>
 </nav></div></header>
+
 <main>
-<section class="page-hero"><div class="container page-hero-grid"><div><span class="eyebrow"><b></b>Stove quote</span><h1>Tell us about<br><em>your project.</em></h1><p class="lead">A few details about your home helps us understand the job and prepare the right next steps.</p><div class="actions"><a class="btn primary" href="quote.html">Request a quote <span>↗</span></a><a class="btn secondary" href="contact.html">Get in touch</a></div></div><div class="hero-note"><strong>Local, qualified & insured.</strong><p>Clear advice, careful work and a clean finish from a local chimney and stove specialist.</p></div></div></section>
-<section class="section"><div class="container booking-grid"><div><span class="kicker">Project enquiry</span><h2>From empty fireplace<br><em>to cosy room.</em></h2><p style="color:var(--muted);font-size:14px;max-width:430px;margin-top:25px">Don't worry if you don't know exactly what you need. Tell us what you want to achieve and we'll guide you.</p></div><form class="form"><div class="form-row"><label>Name<input required placeholder="Your name"></label><label>Phone<input required type="tel" placeholder="07xxx xxxxxx"></label></div><label>Email<input required type="email" placeholder="you@example.com"></label><label>Postcode<input required placeholder="Your postcode"></label><label>Project<select><option>New log burner</option><option>New multi-fuel stove</option><option>Replace existing stove</option><option>Not sure yet</option></select></label><label>Tell us about the room<textarea rows="6" placeholder="Existing fireplace, chimney, room size, style you're after, etc."></textarea></label><button class="btn primary" type="submit">Request a quote →</button><p class="success" style="display:none;background:#e1ecd9;padding:12px;border-radius:9px;font-size:11px;color:#52634b">Thanks — your project enquiry is ready to connect to the real quote workflow.</p></form></div></section>
-<section class="cta"><div class="container cta-inner"><div><span class="kicker">Soot Destroyer</span><h2>Let's get your<br><em>fireplace sorted.</em></h2></div><a class="btn light" href="quote.html">Request a quote <span>↗</span></a></div></section>
+<section class="page-hero"><div class="container page-hero-grid"><div><span class="eyebrow"><b></b>Instant stove quote</span><h1>Build your<br><em>stove package.</em></h1><p class="lead">Choose your stove, flue, hearth, beam and chamber finish to see an installation price straight away.</p><div class="actions"><a class="btn primary" href="#quote-builder">Start building <span>↓</span></a><a class="btn secondary" href="contact.html">Ask us a question</a></div></div><div class="hero-note"><strong>Subject to survey.</strong><p>The calculator uses the package and options from the original Soot Destroyer quote system. Final installation details and suitability are confirmed following survey.</p></div></div></section>
+
+<section class="quote-shell" id="quote-builder">
+<div class="container">
+<div class="quote-intro"><span class="kicker">Standard package</span><h2>Everything you need for a professional installation.</h2><p class="lead">The base package starts at £2,195, with the options below added to your total.</p></div>
+
+<div class="package-deal">
+<h2>Package deal for £2,195 includes</h2>
+<ul>
+<li>Choice of 7 stoves (see others for additional prices)</li>
+<li>Open up chimney to original size</li>
+<li>316 — 10m x 5&quot; liner, closure plate, pot hanging cowl, flex adaptor and stove pipe</li>
+<li>Fire boarded chamber (additional price for tiled chambers)</li>
+<li>Indian Stone Hearth or Black Limestone Hearth</li>
+<li>Rubble removal</li>
+<li>Plastered</li>
+<li>Carbon monoxide alarm</li>
+<li>Chimney sweep</li>
+<li>HETAS sign off</li>
+</ul>
+</div>
+
+<form id="quote-form" class="quote-form" action="https://formspree.io/f/xvgqaorp" method="POST">
+<input type="hidden" name="_subject" value="New Stove Installation Quote Request">
+<input type="hidden" name="Total Price" id="total_price_field">
+<input type="hidden" name="Stove Choice" id="stove_choice_field">
+<input type="hidden" name="Flue Choice" id="flue_choice_field">
+<input type="hidden" name="Hearth Choice" id="hearth_choice_field">
+<input type="hidden" name="Beam Choice" id="beam_choice_field">
+<input type="hidden" name="Chamber Choice" id="chamber_choice_field">
+<input type="hidden" name="Extras Selected" id="extras_choice_field" value="">
+<input type="text" name="_gotcha" style="display:none">
+
+<div class="quote-card">
+<h2>1. Choose your stove</h2><p class="section-copy">Seven stoves are included in the £2,195 package. Hamer Bassett 5 is the premium option shown in the original calculator.</p>
+<div class="option-grid">
+<div class="option"><input id="stove-1" type="radio" name="stove" value="Mourne 5 Eco (£2,195)" data-price="2195"><label for="stove-1"><div class="option-visual"><img class="choice-image" src="https://www.jandrhillflues.co.uk/wp-content/uploads/2022/03/5KW-Portrait-Side-On.png" alt="Mourne 5 Eco"></div><div class="option-copy"><span class="option-name">Mourne 5 Eco</span><span class="option-price">£2,195</span></div></label></div>
+<div class="option"><input id="stove-2" type="radio" name="stove" value="Mourne 5 Summit (£2,195)" data-price="2195"><label for="stove-2"><div class="option-visual"><img class="choice-image" src="https://www.jandrhillflues.co.uk/wp-content/uploads/2025/08/Screenshot-119.png" alt="Mourne 5 Summit"></div><div class="option-copy"><span class="option-name">Mourne 5 Summit</span><span class="option-price">£2,195</span></div></label></div>
+<div class="option"><input id="stove-3" type="radio" name="stove" value="Ottawa (£2,195)" data-price="2195" checked><label for="stove-3"><div class="option-visual"><img class="choice-image" src="https://www.stoveworlduk.co.uk/image/cachewebp/catalog/5kw-Defra-Approved-Ecodesign-Ready-Wood-Burning-Stove-485x485.webp" alt="Ottawa"></div><div class="option-copy"><span class="option-name">Ottawa</span><span class="option-price">£2,195</span></div></label></div>
+<div class="option"><input id="stove-4" type="radio" name="stove" value="Snug (£2,195)" data-price="2195"><label for="stove-4"><div class="option-visual"><img class="choice-image" src="https://www.stoveworlduk.co.uk/image/cachewebp/catalog/stoves/contemporary-stoves/ecosy-snug-5kw-multi-fuel-2022-eco-design-ready-defra-approved-stove-485x485.webp" alt="Snug"></div><div class="option-copy"><span class="option-name">Snug</span><span class="option-price">£2,195</span></div></label></div>
+<div class="option"><input id="stove-5" type="radio" name="stove" value="Woodford Chadwick 5 (£2,195)" data-price="2195"><label for="stove-5"><div class="option-visual"><img class="choice-image" src="https://www.flue-ducting.co.uk/media/catalog/product/c/h/chadwick5_side.jpg?width=1200&amp;height=1200" alt="Woodford Chadwick 5"></div><div class="option-copy"><span class="option-name">Woodford Chadwick 5</span><span class="option-price">£2,195</span></div></label></div>
+<div class="option"><input id="stove-6" type="radio" name="stove" value="Woodford Lowry 5 (£2,195)" data-price="2195"><label for="stove-6"><div class="option-visual"><img class="choice-image" src="https://www.flue-ducting.co.uk/media/catalog/product/l/o/lowry_5_2.jpeg?width=320&amp;height=350" alt="Woodford Lowry 5"></div><div class="option-copy"><span class="option-name">Woodford Lowry 5</span><span class="option-price">£2,195</span></div></label></div>
+<div class="option"><input id="stove-7" type="radio" name="stove" value="Newburn 5 Idyllic (£2,195)" data-price="2195"><label for="stove-7"><div class="option-visual"><img class="choice-image" src="https://www.stoveworlduk.co.uk/image/cachewebp/catalog/Newburn%205%20Idyll%20Badges%20-800x800.webp" alt="Newburn 5 Idyllic"></div><div class="option-copy"><span class="option-name">Newburn 5 Idyllic</span><span class="option-price">£2,195</span></div></label></div>
+<div class="option"><input id="stove-8" type="radio" name="stove" value="Hamer Bassett 5 (£3,095)" data-price="3095"><label for="stove-8"><div class="option-visual"><img class="choice-image" src="https://hamerfires.co.uk/wp-content/uploads/2025/04/HAMER-STOVE-SAM-APPROVED-WITH-ACCREDITATION-LOGOS.png" alt="Hamer Bassett 5"></div><div class="option-copy"><span class="option-name">Hamer Bassett 5</span><span class="option-price">£3,095</span></div></label></div>
+</div></div>
+
+<div class="quote-card"><h2>2. Choose your flue</h2><p class="section-copy">Select the liner suitable for the type of stove installation.</p><div class="option-grid">
+<div class="option"><input id="flue-1" type="radio" name="flue" value="316 Wood (£0)" data-price="0" checked><label for="flue-1"><div class="option-visual"><img class="choice-image" src="https://midthermflue.co.uk/wp-content/uploads/2022/08/Midflex-316.jpg" alt="316 flue"></div><div class="option-copy"><span class="option-name">316 — Wood Burning</span><span class="option-price">£0</span></div></label></div>
+<div class="option"><input id="flue-2" type="radio" name="flue" value="904 Multifuel (£200)" data-price="200"><label for="flue-2"><div class="option-visual"><img class="choice-image" src="https://midthermflue.co.uk/wp-content/uploads/2022/08/Midflex-316.jpg" alt="904 multifuel flue"></div><div class="option-copy"><span class="option-name">904 — Multifuel</span><span class="option-price">£200</span></div></label></div>
+</div></div>
+
+<div class="quote-card"><h2>3. Choose your hearth</h2><div class="option-grid">
+<div class="option"><input id="hearth-1" type="radio" name="hearth" value="Indian Stone (£0)" data-price="0" checked><label for="hearth-1"><div class="option-visual"><img class="choice-image" src="https://img1.wsimg.com/isteam/ip/b71ad514-2807-43a4-a8ad-37c390053b34/1000079310.jpg/:/rs=w:370,cg:true,m" alt="Indian Stone"></div><div class="option-copy"><span class="option-name">Indian Stone</span><span class="option-price">£0</span></div></label></div>
+<div class="option"><input id="hearth-2" type="radio" name="hearth" value="Black Limestone (£0)" data-price="0"><label for="hearth-2"><div class="option-visual"><img class="choice-image" src="https://img1.wsimg.com/isteam/ip/b71ad514-2807-43a4-a8ad-37c390053b34/20250227_094229.jpg" alt="Black Limestone"></div><div class="option-copy"><span class="option-name">Black Limestone</span><span class="option-price">£0</span></div></label></div>
+<div class="option"><input id="hearth-3" type="radio" name="hearth" value="Honed Granite (£180)" data-price="180"><label for="hearth-3"><div class="option-visual"><img class="choice-image" src="https://img1.wsimg.com/isteam/ip/b71ad514-2807-43a4-a8ad-37c390053b34/FB_IMG_1752313676365.jpg" alt="Honed Granite"></div><div class="option-copy"><span class="option-name">Honed Granite</span><span class="option-price">£180</span></div></label></div>
+<div class="option"><input id="hearth-4" type="radio" name="hearth" value="Polished Granite (£180)" data-price="180"><label for="hearth-4"><div class="option-visual"><img class="choice-image" src="https://img1.wsimg.com/isteam/ip/b71ad514-2807-43a4-a8ad-37c390053b34/FB_IMG_1752313676365.jpg" alt="Polished Granite"></div><div class="option-copy"><span class="option-name">Polished Granite</span><span class="option-price">£180</span></div></label></div>
+<div class="option"><input id="hearth-5" type="radio" name="hearth" value="Slate (£280)" data-price="280"><label for="hearth-5"><div class="option-visual"><img class="choice-image" src="https://img1.wsimg.com/isteam/ip/b71ad514-2807-43a4-a8ad-37c390053b34/FB_IMG_1752313624348.jpg" alt="Slate"></div><div class="option-copy"><span class="option-name">Slate</span><span class="option-price">£280</span></div></label></div>
+</div></div>
+
+<div class="quote-card"><h2>4. Choose your beam</h2><div class="option-grid">
+<div class="option"><input id="beam-1" type="radio" name="beam" value="No Beam (£0)" data-price="0" checked><label for="beam-1"><div class="option-visual"><img class="choice-image" src="https://media.istockphoto.com/id/1364270289/vector/no-sign-stop-icon-red-slash-circle-road-traffic-element-information-emblem-vector.jpg?s=612x612&amp;w=0&amp;k=20&amp;c=Ie6NtAYqrSCulhUxPnjQpjumNmRUjhARcyDP_h25hgU=" alt="No Beam"></div><div class="option-copy"><span class="option-name">No Beam</span><span class="option-price">£0</span></div></label></div>
+<div class="option"><input id="beam-2" type="radio" name="beam" value="Light Oak Geocast Beam (£180)" data-price="180"><label for="beam-2"><div class="option-visual"><img class="choice-image" src="https://www.directstoves.com/media/catalog/product/l/i/light-oak-geocast-beam_4.jpg?width=1200&amp;height=1200&amp;store=storeview_direct_stoves&amp;image-type=image" alt="Light Oak Geocast Beam"></div><div class="option-copy"><span class="option-name">Light Oak Geocast</span><span class="option-price">£180</span></div></label></div>
+<div class="option"><input id="beam-3" type="radio" name="beam" value="Dark Oak Geocast Beam (£180)" data-price="180"><label for="beam-3"><div class="option-visual"><img class="choice-image" src="https://www.directstoves.com/media/catalog/product/d/a/dark-oak-geocast-beam_1_1.jpg?width=1200&amp;height=1200&amp;store=storeview_direct_stoves&amp;image-type=image" alt="Dark Oak Geocast Beam"></div><div class="option-copy"><span class="option-name">Dark Oak Geocast</span><span class="option-price">£180</span></div></label></div>
+<div class="option"><input id="beam-4" type="radio" name="beam" value="Light Oak with Lights (£200)" data-price="200"><label for="beam-4"><div class="option-visual"><img class="choice-image" src="https://www.directstoves.com/media/catalog/product/l/i/light-oak-geocast-beam_4.jpg?width=1200&amp;height=1200&amp;store=storeview_direct_stoves&amp;image-type=image" alt="Light Oak with Lights"></div><div class="option-copy"><span class="option-name">Light Oak + Lights</span><span class="option-price">£200</span></div></label></div>
+<div class="option"><input id="beam-5" type="radio" name="beam" value="Dark Oak with Lights (£200)" data-price="200"><label for="beam-5"><div class="option-visual"><img class="choice-image" src="https://www.directstoves.com/media/catalog/product/d/a/dark-oak-geocast-beam_1_1.jpg?width=1200&amp;height=1200&amp;store=storeview_direct_stoves&amp;image-type=image" alt="Dark Oak with Lights"></div><div class="option-copy"><span class="option-name">Dark Oak + Lights</span><span class="option-price">£200</span></div></label></div>
+<div class="option"><input id="beam-6" type="radio" name="beam" value="Light Oak Beam (£180)" data-price="180"><label for="beam-6"><div class="option-visual"><img class="choice-image" src="https://img1.wsimg.com/isteam/ip/b71ad514-2807-43a4-a8ad-37c390053b34/Screenshot_20250724_182224_Instagram.jpg" alt="Light Oak Beam"></div><div class="option-copy"><span class="option-name">Light Oak Beam</span><span class="option-price">£180</span></div></label></div>
+<div class="option"><input id="beam-7" type="radio" name="beam" value="Dark Oak Beam (£180)" data-price="180"><label for="beam-7"><div class="option-visual"><img class="choice-image" src="https://img1.wsimg.com/isteam/ip/b71ad514-2807-43a4-a8ad-37c390053b34/Screenshot_20250724_182320_Instagram.jpg" alt="Dark Oak Beam"></div><div class="option-copy"><span class="option-name">Dark Oak Beam</span><span class="option-price">£180</span></div></label></div>
+</div></div>
+
+<div class="quote-card"><h2>5. Choose your chamber finish</h2><div class="option-grid">
+<div class="option"><input id="chamber-1" type="radio" name="chamber" value="Paintable Boards (£0)" data-price="0" checked><label for="chamber-1"><div class="option-visual"><img class="choice-image" src="https://www.percydoughty.com/image.php?imagefile=_uploads/percy/PDImages/TCBFBMPOWERBOARD1000.jpg&amp;resizetoWidth=233" alt="Paintable Boards"></div><div class="option-copy"><span class="option-name">Paintable Boards</span><span class="option-price">£0</span></div></label></div>
+<div class="option"><input id="chamber-2" type="radio" name="chamber" value="Rustic Brick (£330)" data-price="330"><label for="chamber-2"><div class="option-visual"><img class="choice-image" src="https://www.directstoves.com/media/catalog/product/r/u/rustic_brick_chamber.jpg?width=1200&amp;height=1200&amp;store=storeview_direct_stoves&amp;image-type=image" alt="Rustic Brick"></div><div class="option-copy"><span class="option-name">Rustic Brick</span><span class="option-price">£330</span></div></label></div>
+<div class="option"><input id="chamber-3" type="radio" name="chamber" value="Oyster Split Staggered (£300)" data-price="300"><label for="chamber-3"><div class="option-visual"><img class="choice-image" src="https://www.directstoves.com/media/catalog/product/s/t/staggered_oyster_chamber.jpg?width=1200&amp;height=1200&amp;store=storeview_direct_stoves&amp;image-type=image" alt="Oyster Split Staggered"></div><div class="option-copy"><span class="option-name">Oyster Split</span><span class="option-price">£300</span></div></label></div>
+<div class="option"><input id="chamber-4" type="radio" name="chamber" value="Grey White Staggered (£300)" data-price="300"><label for="chamber-4"><div class="option-visual"><img class="choice-image" src="https://www.directstoves.com/media/catalog/product/g/r/grey-white-slate-fireplace-chamber.jpg?width=1200&amp;height=1200&amp;store=storeview_direct_stoves&amp;image-type=image" alt="Grey White Staggered"></div><div class="option-copy"><span class="option-name">Grey White</span><span class="option-price">£300</span></div></label></div>
+<div class="option"><input id="chamber-5" type="radio" name="chamber" value="Charcoal Staggered (£300)" data-price="300"><label for="chamber-5"><div class="option-visual"><img class="choice-image" src="https://www.directstoves.com/media/catalog/product/s/t/staggered_black_slate_chamber.jpg?width=1200&amp;height=1200&amp;store=storeview_direct_stoves&amp;image-type=image" alt="Charcoal Staggered"></div><div class="option-copy"><span class="option-name">Charcoal</span><span class="option-price">£300</span></div></label></div>
+</div></div>
+
+<div class="quote-card"><h2>6. Your details</h2><p class="section-copy">Send the finished quote request to Soot Destroyer. We can confirm the final specification after survey.</p><div class="contact-grid">
+<label class="field"><span>Your name</span><input type="text" name="Name" required placeholder="Your name"></label>
+<label class="field"><span>Phone number</span><input type="tel" name="Phone number" required placeholder="07xxx xxxxxx"></label>
+<label class="field full"><span>Email</span><input type="email" name="Email" required placeholder="you@example.com"></label>
+</div><p class="form-note">By submitting this form, your selected options and contact details will be sent through the quote enquiry form.</p></div>
+
+<div class="quote-summary"><div><div class="quote-total-label">Estimated quote</div><div class="quote-total" id="total_display">£2,195.00</div></div><button class="btn primary submit-btn" type="submit">Submit quote request <span>↗</span></button></div>
+</form>
+</div></section>
+
+<section class="cta"><div class="container cta-inner"><div><span class="kicker">Need advice?</span><h2>Let's get your<br><em>fireplace sorted.</em></h2></div><a class="btn light" href="tel:+447442174051">Call 07442 174051 <span>↗</span></a></div></section>
 </main>
+
 <footer class="footer"><div class="container footer-grid">
-<div><a class="brand" href="index.html"><span class="mark">SD</span><span><strong>Soot</strong> Destroyer<small>Chimney & Stove Specialists</small></span></a><p>Professional chimney sweeping and stove installation with a clean, local approach.</p></div>
+<div><a class="brand" href="index.html"><img class="brand-mark" src="sootlogo.jpg" alt="Soot Destroyer"><span><strong>Soot</strong> Destroyer<small>Chimney & Stove Specialists</small></span></a><p>Professional chimney sweeping and stove installation with a clean, local approach.</p></div>
 <div><h4>Services</h4><a href="chimney-sweeping.html">Chimney sweeping</a><a href="stove-installation.html">Stove installation</a><a href="stove-packages.html">Stove packages</a><a href="pricing.html">Pricing</a></div>
 <div><h4>Explore</h4><a href="gallery.html">Our work</a><a href="reviews.html">Reviews</a><a href="areas.html">Areas</a><a href="faqs.html">FAQs</a></div>
-<div><h4>Contact</h4><a href="tel:+440000000000">Call us</a><a href="mailto:hello@sootdestroyer.co.uk">hello@sootdestroyer.co.uk</a><span>Mossley, Greater Manchester</span></div>
+<div><h4>Contact</h4><a href="tel:+447442174051">07442 174051</a><a href="mailto:hello@sootdestroyer.co.uk">hello@sootdestroyer.co.uk</a><span>Mossley, Greater Manchester</span></div>
 </div><div class="container footer-bottom">© 2026 Soot Destroyer <span>Built for clean fires & cosy homes.</span></div></footer>
-<script src="site.js"></script></body></html>
+
+<div class="lightbox" id="lightbox" aria-hidden="true"><button class="lightbox__close" type="button" aria-label="Close image">Close ✕</button><img alt="Enlarged preview" id="lightboxImg"></div>
+<script src="site.js"></script>
+<script>
+(function(){
+  const form=document.getElementById('quote-form');
+  const totalDisplay=document.getElementById('total_display');
+  const totalField=document.getElementById('total_price_field');
+  const fields={
+    stove:document.getElementById('stove_choice_field'),
+    flue:document.getElementById('flue_choice_field'),
+    hearth:document.getElementById('hearth_choice_field'),
+    beam:document.getElementById('beam_choice_field'),
+    chamber:document.getElementById('chamber_choice_field'),
+    extras:document.getElementById('extras_choice_field')
+  };
+  function selected(name){return form.querySelector('input[name="'+name+'"]:checked')}
+  function price(name){const el=selected(name); return el ? Number(el.dataset.price || 0) : 0}
+  function sync(){
+    const total=price('stove')+price('flue')+price('hearth')+price('beam')+price('chamber');
+    const formatted='£'+total.toLocaleString('en-GB',{minimumFractionDigits:2,maximumFractionDigits:2});
+    totalDisplay.textContent=formatted;
+    totalField.value=formatted;
+    Object.keys(fields).forEach(function(key){
+      if(key==='extras'){fields[key].value='';return}
+      const el=selected(key); fields[key].value=el ? el.value : '';
+    });
+  }
+  form.addEventListener('change',sync);
+  form.addEventListener('submit',sync);
+  sync();
+
+  const lb=document.getElementById('lightbox');
+  const lbImg=document.getElementById('lightboxImg');
+  const close=()=>{lb.classList.remove('open');lb.setAttribute('aria-hidden','true');lbImg.src='';document.body.style.overflow=''};
+  document.addEventListener('click',function(e){
+    const img=e.target.closest('img.choice-image');
+    if(img){lbImg.src=img.getAttribute('data-large')||img.src;lbImg.alt=img.alt||'Enlarged image';lb.classList.add('open');lb.setAttribute('aria-hidden','false');document.body.style.overflow='hidden';return}
+    if(e.target===lb || e.target.closest('.lightbox__close')) close();
+  });
+  document.addEventListener('keydown',e=>{if(e.key==='Escape'&&lb.classList.contains('open'))close()});
+})();
+</script>
+</body>
+</html>
