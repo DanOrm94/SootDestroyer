@@ -1,0 +1,6 @@
+worker/
+migrations/
+wrangler.jsonc
+*.sql
+*.md
+.github/
