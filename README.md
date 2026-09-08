@@ -25,7 +25,7 @@ Customers can:
 4. Enter contact/address details and notes.
 5. Confirm the booking.
 
-The booking is written to D1. Availability is backed by 30-minute booking slots, with a unique database key preventing two customers from claiming the same slot. D1 batches the booking write and slot reservations atomically, so a race for the same appointment fails cleanly. Cloudflare documents D1 batches as transactional and sequential. citeturn1search6
+The booking is written to D1. Availability is backed by 30-minute booking slots, with a unique database key preventing two customers from claiming the same slot. D1 batches the booking write and slot reservations atomically.
 
 Admins can:
 
@@ -38,7 +38,7 @@ Admins can:
 - Change working hours.
 - Block/unblock dates.
 
-Admin sessions use an HttpOnly, Secure, SameSite=Lax cookie and Cloudflare KV. Cloudflare specifically documents KV as suitable for authentication details/tokens. citeturn4search0turn3search1
+Admin sessions use an HttpOnly, Secure, SameSite=Lax cookie and Cloudflare KV.
 
 ## Cloudflare setup
 
@@ -56,7 +56,7 @@ npx wrangler d1 create sootdestroyer-bookings
 npx wrangler kv namespace create SESSIONS
 ```
 
-3. Put the returned D1 `database_id` and KV `id` into `wrangler.jsonc`, replacing the two `REPLACE_WITH_...` values. Cloudflare requires both IDs for bindings. citeturn2search1turn4search2
+3. Put the returned D1 `database_id` and KV `id` into `wrangler.jsonc`, replacing the two `REPLACE_WITH_...` values.
 
 4. Apply the booking schema to production D1:
 
@@ -77,13 +77,13 @@ npx wrangler secret put ADMIN_PASSWORD
 npx wrangler deploy
 ```
 
-Cloudflare Workers can serve the existing static assets and run the `/api/*` Worker routes as one deployment. citeturn1search4turn1search1
+The Worker serves the existing static site and handles the `/api/*` booking routes in the same Cloudflare deployment.
 
-### Important
+### Important before opening online booking
 
 The starter service durations are deliberately editable in the admin panel. The existing site gives prices but does not provide verified appointment durations, so durations should be confirmed with Liam before opening online booking to customers.
 
-The same applies to working hours: the migration seeds Monday–Saturday 09:00–17:00 and Sunday closed as a starting configuration; update this in the admin panel to the real business hours before launch.
+The same applies to working hours: the migration seeds Monday–Saturday 09:00–17:00 and Sunday closed as a starting configuration. Update this in the admin panel to the real business hours before launch.
 
 ## Existing site
 
