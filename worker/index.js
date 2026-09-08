@@ -43,6 +43,8 @@ async function availability(date, serviceId, env) {
   if (!localDate(date)) throw new Error('Invalid date');
   const service = await env.DB.prepare('SELECT * FROM services WHERE id=? AND active=1').bind(serviceId).first();
   if (!service) throw new Error('Service not found');
+  const duration = Number(service.duration_minutes);
+  if (!Number.isInteger(duration) || duration < SLOT_MINUTES || duration % SLOT_MINUTES) throw new Error('Service duration must be in 30-minute increments');
   const day = new Date(`${date}T12:00:00Z`).getUTCDay();
   const hours = await env.DB.prepare('SELECT * FROM business_hours WHERE day_of_week=?').bind(day).first();
   if (!hours || !hours.is_open) return { date, service, slots: [] };
@@ -50,10 +52,7 @@ async function availability(date, serviceId, env) {
   if (blocked) return { date, service, slots: [] };
   const busy = await env.DB.prepare('SELECT slot_time FROM booking_slots WHERE date=?').bind(date).all();
   const busySet = new Set((busy.results || []).map(r => r.slot_time));
-  const duration = Number(service.duration_minutes);
-  const open = toMinutes(hours.open_time);
-  const close = toMinutes(hours.close_time);
-  const slots = [];
+  const open = toMinutes(hours.open_time), close = toMinutes(hours.close_time), slots = [];
   for (let start=open; start + duration <= close; start += SLOT_MINUTES) {
     let free = true;
     for (let m=start; m<start+duration; m+=SLOT_MINUTES) if (busySet.has(fromMinutes(m))) { free=false; break; }
@@ -70,16 +69,17 @@ async function createBooking(request, env) {
   if (!localDate(body.date) || !localTime(body.time)) return bad('Invalid date or time');
   const service = await env.DB.prepare('SELECT * FROM services WHERE id=? AND active=1').bind(body.service_id).first();
   if (!service) return bad('Service is no longer available', 409);
+  const duration = Number(service.duration_minutes);
+  if (!Number.isInteger(duration) || duration < SLOT_MINUTES || duration % SLOT_MINUTES) return bad('This service is not configured with a valid duration', 409);
   const startMin = toMinutes(body.time);
   if (startMin % SLOT_MINUTES !== 0) return bad('Bookings must start on a 30-minute boundary');
-  const endMin = startMin + Number(service.duration_minutes);
+  const endMin = startMin + duration;
   const day = new Date(`${body.date}T12:00:00Z`).getUTCDay();
   const hours = await env.DB.prepare('SELECT * FROM business_hours WHERE day_of_week=?').bind(day).first();
   if (!hours || !hours.is_open || startMin < toMinutes(hours.open_time) || endMin > toMinutes(hours.close_time)) return bad('That time is outside opening hours', 409);
   const blocked = await env.DB.prepare('SELECT 1 FROM blocked_dates WHERE date=?').bind(body.date).first();
   if (blocked) return bad('That date is unavailable', 409);
-  const id = crypto.randomUUID();
-  const slots = [];
+  const id = crypto.randomUUID(), slots = [];
   for (let m=startMin; m<endMin; m+=SLOT_MINUTES) slots.push(fromMinutes(m));
   const bookingSql = env.DB.prepare(`INSERT INTO bookings (id, service_id, date, start_time, end_time, name, phone, email, address, postcode, notes, status, created_at, updated_at) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?)`).bind(
     id, service.id, body.date, body.time, fromMinutes(endMin), String(body.name).trim(), String(body.phone).trim(), String(body.email).trim().toLowerCase(), String(body.address||'').trim(), String(body.postcode).trim(), String(body.notes||'').trim(), 'confirmed', nowIso(), nowIso()
@@ -102,15 +102,16 @@ async function adminData(path, request, env) {
   if (path === '/api/admin/services' && request.method === 'GET') return json({ services: await services(env,true) });
   if (path === '/api/admin/services' && request.method === 'POST') {
     if (!sameOrigin(request)) return bad('Forbidden',403);
-    const b=await request.json(); const id=crypto.randomUUID();
-    if (!b.name || !Number(b.duration_minutes)) return bad('Name and duration are required');
-    await env.DB.prepare('INSERT INTO services (id,name,description,price_label,duration_minutes,active,sort_order) VALUES (?,?,?,?,?,?,?)').bind(id,b.name,b.description||'',b.price_label||'POA',Number(b.duration_minutes),b.active===false?0:1,Number(b.sort_order||0)).run();
+    const b=await request.json(); const duration=Number(b.duration_minutes); const id=crypto.randomUUID();
+    if (!b.name || !Number.isInteger(duration) || duration < SLOT_MINUTES || duration % SLOT_MINUTES) return bad('Name and a duration in 30-minute increments are required');
+    await env.DB.prepare('INSERT INTO services (id,name,description,price_label,duration_minutes,active,sort_order) VALUES (?,?,?,?,?,?,?)').bind(id,b.name,b.description||'',b.price_label||'POA',duration,b.active===false?0:1,Number(b.sort_order||0)).run();
     return json({ service: await env.DB.prepare('SELECT * FROM services WHERE id=?').bind(id).first() },201);
   }
   if (path.startsWith('/api/admin/services/') && request.method === 'PATCH') {
     if (!sameOrigin(request)) return bad('Forbidden',403);
-    const id=path.split('/').pop(); const b=await request.json();
-    await env.DB.prepare('UPDATE services SET name=?,description=?,price_label=?,duration_minutes=?,active=?,sort_order=? WHERE id=?').bind(b.name,b.description||'',b.price_label||'POA',Number(b.duration_minutes),b.active?1:0,Number(b.sort_order||0),id).run();
+    const id=path.split('/').pop(); const b=await request.json(); const duration=Number(b.duration_minutes);
+    if (!b.name || !Number.isInteger(duration) || duration < SLOT_MINUTES || duration % SLOT_MINUTES) return bad('Name and a duration in 30-minute increments are required');
+    await env.DB.prepare('UPDATE services SET name=?,description=?,price_label=?,duration_minutes=?,active=?,sort_order=? WHERE id=?').bind(b.name,b.description||'',b.price_label||'POA',duration,b.active?1:0,Number(b.sort_order||0),id).run();
     return json({ service: await env.DB.prepare('SELECT * FROM services WHERE id=?').bind(id).first() });
   }
   if (path === '/api/admin/hours' && request.method === 'GET') return json({ hours:(await env.DB.prepare('SELECT * FROM business_hours ORDER BY day_of_week').all()).results||[] });
@@ -131,6 +132,7 @@ async function adminData(path, request, env) {
     if (!sameOrigin(request)) return bad('Forbidden',403); const id=path.split('/').pop(); const b=await request.json();
     const booking=await env.DB.prepare('SELECT * FROM bookings WHERE id=?').bind(id).first(); if(!booking) return bad('Booking not found',404);
     if(!['confirmed','completed','cancelled'].includes(b.status)) return bad('Invalid status');
+    if(booking.status==='cancelled' && b.status!=='cancelled') return bad('Cancelled bookings cannot be reactivated; create a new booking',409);
     if(b.status==='cancelled') await env.DB.batch([env.DB.prepare('UPDATE bookings SET status=?,updated_at=? WHERE id=?').bind(b.status,nowIso(),id), env.DB.prepare('DELETE FROM booking_slots WHERE booking_id=?').bind(id)]);
     else await env.DB.prepare('UPDATE bookings SET status=?,updated_at=? WHERE id=?').bind(b.status,nowIso(),id).run();
     return json({ok:true});
