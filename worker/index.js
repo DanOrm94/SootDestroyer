@@ -154,11 +154,11 @@ async function handleApi(request, env) {
     if(!env.ADMIN_PASSWORD || email!==adminEmail || password!==env.ADMIN_PASSWORD) return bad('Invalid email or password',401);
     const token=crypto.randomUUID()+crypto.randomUUID().replaceAll('-','');
     await env.SESSIONS.put(`session:${token}`,JSON.stringify({email,expiresAt:Date.now()+SESSION_TTL*1000}),{expirationTtl:SESSION_TTL});
-    return json({ok:true},200,{'Set-Cookie':`sd_admin=${encodeURIComponent(token)}; Path=/admin; HttpOnly; Secure; SameSite=Lax; Max-Age=${SESSION_TTL}`});
+    return json({ok:true},200,{'Set-Cookie':`sd_admin=${encodeURIComponent(token)}; Path=/; HttpOnly; Secure; SameSite=Lax; Max-Age=${SESSION_TTL}`});
   }
   if(path==='/api/auth/logout' && request.method==='POST') {
     const token=parseCookie(request,'sd_admin'); if(token&&env.SESSIONS) await env.SESSIONS.delete(`session:${token}`);
-    return json({ok:true},200,{'Set-Cookie':'sd_admin=; Path=/admin; HttpOnly; Secure; SameSite=Lax; Max-Age=0'});
+    return json({ok:true},200,{'Set-Cookie':'sd_admin=; Path=/; HttpOnly; Secure; SameSite=Lax; Max-Age=0'});
   }
   if(path.startsWith('/api/admin/')) return adminData(path,request,env);
   return bad('Not found',404);
