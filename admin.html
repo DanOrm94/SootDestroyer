@@ -1,9 +1,87 @@
-<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Soot Destroyer Admin</title><link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Manrope:wght@600;700;800&display=swap" rel="stylesheet"><link rel="stylesheet" href="admin.css"></head><body>
-<div id="login" class="login-shell"><div class="login-card"><img src="sootlogo.jpg" alt="Soot Destroyer"><span class="eyebrow">Admin</span><h1>Booking <em>control.</em></h1><p>Sign in to manage availability, services and customer bookings.</p><form id="loginForm"><label>Email<input id="loginEmail" type="email" autocomplete="username" required value="liam7388@gmail.com"></label><label>Password<input id="loginPassword" type="password" autocomplete="current-password" required></label><button>Sign in →</button><div id="loginMessage"></div></form></div></div>
-<div id="app" hidden><header class="admin-head"><div><strong>Soot Destroyer</strong><span>Booking admin</span></div><div><span id="adminEmail"></span><button id="logout" class="ghost">Log out</button></div></header><main class="admin-main"><nav class="tabs"><button class="tab active" data-tab="calendar">Calendar</button><button class="tab" data-tab="bookings">Bookings</button><button class="tab" data-tab="services">Services</button><button class="tab" data-tab="hours">Working hours</button><button class="tab" data-tab="blocked">Blocked dates</button></nav>
-<section id="calendar" class="panel active"><div class="panel-head"><div><span class="eyebrow">Live schedule</span><h2>Calendar</h2></div><div class="range"><button id="calPrev">←</button><input id="calDate" type="date"><button id="calNext">→</button></div></div><div id="calendarGrid" class="calendar-grid"></div></section>
-<section id="bookings" class="panel"><div class="panel-head"><div><span class="eyebrow">Customer records</span><h2>Bookings</h2></div><button id="refreshBookings" class="small-btn">Refresh</button></div><div id="bookingTable" class="table-wrap"></div></section>
-<section id="services" class="panel"><div class="panel-head"><div><span class="eyebrow">What customers can book</span><h2>Services</h2></div><button id="addService" class="small-btn">Add service</button></div><div id="serviceList" class="service-list"></div></section>
-<section id="hours" class="panel"><div class="panel-head"><div><span class="eyebrow">Availability rules</span><h2>Working hours</h2></div><button id="saveHours" class="small-btn">Save hours</button></div><div id="hoursList" class="hours-list"></div></section>
-<section id="blocked" class="panel"><div class="panel-head"><div><span class="eyebrow">Days off</span><h2>Blocked dates</h2></div><form id="blockedForm" class="inline-form"><input id="blockedDate" type="date" required><input id="blockedReason" placeholder="Reason"><button>Add blocked date</button></form></div><div id="blockedList" class="blocked-list"></div></section>
-</main></div><script src="admin.js"></script></body></html>
+<!doctype html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <title>Soot Destroyer Admin</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Manrope:wght@600;700;800&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="admin.css">
+</head>
+
+<body>
+    <div id="login" class="login-shell">
+        <div class="login-card"><img src="sootlogo.jpg" alt="Soot Destroyer"><span class="eyebrow">Admin</span>
+            <h1>Booking <em>control.</em></h1>
+            <p>Sign in to manage availability, services and customer bookings.</p>
+            <form id="loginForm"><label>Email<input id="loginEmail" type="email" autocomplete="username" required
+                        value="liam7388@gmail.com"></label><label>Password<input id="loginPassword" type="password"
+                        autocomplete="current-password" required></label><button>Sign in →</button>
+                <div id="loginMessage"></div>
+            </form>
+        </div>
+    </div>
+    <div id="app" hidden>
+        <header class="admin-head">
+            <div><strong>Soot Destroyer</strong><span>Booking admin</span></div>
+            <div><span id="adminEmail"></span><button id="logout" class="ghost">Log out</button></div>
+        </header>
+        <main class="admin-main">
+            <nav class="tabs"><button class="tab active" data-tab="calendar">Calendar</button><button class="tab"
+                    data-tab="bookings">Bookings</button><button class="tab"
+                    data-tab="services">Services</button><button class="tab" data-tab="hours">Working
+                    hours</button><button class="tab" data-tab="blocked">Blocked dates</button></nav>
+            <section id="calendar" class="panel active">
+                <div class="panel-head">
+                    <div><span class="eyebrow">Live schedule</span>
+                        <h2>Calendar</h2>
+                    </div>
+                    <div class="range"><button id="calPrev">←</button><input id="calDate" type="date"><button
+                            id="calNext">→</button></div>
+                </div>
+                <div id="calendarGrid" class="calendar-grid"></div>
+            </section>
+            <section id="bookings" class="panel">
+                <div class="panel-head">
+                    <div><span class="eyebrow">Customer records</span>
+                        <h2>Bookings</h2>
+                    </div><button id="refreshBookings" class="small-btn">Refresh</button>
+                </div>
+                <div id="bookingTable" class="table-wrap"></div>
+            </section>
+            <section id="services" class="panel">
+                <div class="panel-head">
+                    <div><span class="eyebrow">What customers can book</span>
+                        <h2>Services</h2>
+                    </div><button id="addService" class="small-btn">Add service</button>
+                </div>
+                <div id="serviceList" class="service-list"></div>
+            </section>
+            <section id="hours" class="panel">
+                <div class="panel-head">
+                    <div><span class="eyebrow">Availability rules</span>
+                        <h2>Working hours</h2>
+                    </div><button id="saveHours" class="small-btn">Save hours</button>
+                </div>
+                <div id="hoursList" class="hours-list"></div>
+            </section>
+            <section id="blocked" class="panel">
+                <div class="panel-head">
+                    <div><span class="eyebrow">Days off</span>
+                        <h2>Blocked dates</h2>
+                    </div>
+                    <form id="blockedForm" class="inline-form"><input id="blockedDate" type="date" required><input
+                            id="blockedReason" placeholder="Reason"><button>Add blocked date</button></form>
+                </div>
+                <div id="blockedList" class="blocked-list"></div>
+            </section>
+        </main>
+    </div>
+    <script src="admin.js"></script>
+</body>
+
+</html>
