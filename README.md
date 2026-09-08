@@ -1,52 +1,108 @@
-# Soot Destroyer — full flat-file website
+# Soot Destroyer
 
-All pages are in the repository root. There are no folders.
+Soot Destroyer is a flat-file marketing site with a Cloudflare Worker + D1 booking backend.
 
-## Structure
+## Booking system
 
-- index.html — homepage
-- styles.css — homepage CSS
-- script.js — homepage JavaScript
-- chimney-sweeping.html — chimney sweeping
-- chimney-sweeping.css — chimney sweeping CSS
-- chimney-sweeping.js — chimney sweeping JS
-- services.html — services overview
-- stove-installation.html — stove installation
-- stove-packages.html — stove packages
-- pricing.html — pricing
-- gallery.html — recent work
-- show-room.html — modern showroom slideshow
-- show-room.css — showroom styling
-- show-room.js — showroom slideshow JavaScript
-- reviews.html — reviews
-- areas.html — service areas
-- about.html — about
-- contact.html — contact
-- booking.html — chimney sweep booking
-- quote.html — stove quote request
-- faqs.html — FAQs
-- privacy.html — privacy policy template
-- terms.html — terms template
-- site.css — shared page styling
-- site.js — shared page JavaScript
+The live booking flow is now designed around Cloudflare rather than a third-party booking form:
 
-## Show Room photos
+- `booking.html` — customer booking page
+- `booking.js` / `booking.css` — live service, date and time selection
+- `admin.html` — protected admin control panel
+- `admin.js` / `admin.css` — calendar, bookings, services, hours and blocked dates
+- `worker/index.js` — Cloudflare Worker API
+- `migrations/0001_booking_system.sql` — D1 schema and starter services
+- `wrangler.jsonc` — Worker, D1 and session-KV bindings
+- `.assetsignore` — prevents server-side source/config files being published as assets
 
-Upload showroom images into the repository root using these filenames:
+### What the booking system does
 
-- showroom-1.jpg
-- showroom-2.jpg
-- showroom-3.jpg
-- showroom-4.jpg
-- showroom-5.jpg
-- and so on, up to showroom-20.jpg
+Customers can:
 
-The Show Room page automatically detects which images exist, builds the thumbnails and starts the slideshow. JPG is recommended for the best balance of quality and loading speed.
+1. Choose a service.
+2. Choose a date.
+3. See only available start times.
+4. Enter contact/address details and notes.
+5. Confirm the booking.
 
-## Important before launch
+The booking is written to D1. Availability is backed by 30-minute booking slots, with a unique database key preventing two customers from claiming the same slot. D1 batches the booking write and slot reservations atomically, so a race for the same appointment fails cleanly. Cloudflare documents D1 batches as transactional and sequential. citeturn1search6
 
-1. Replace placeholder phone/email details.
-2. Connect the booking and quote forms to the real booking/CRM/email service.
-3. Replace CSS artwork with real project photography.
-4. Verify the business's exact NACS/HETAS/insurance wording before publishing.
-5. Review the privacy and terms pages with the business owner.
+Admins can:
+
+- Sign in at `/admin.html`.
+- View a week calendar.
+- View all bookings and customer details.
+- Mark bookings confirmed, completed or cancelled.
+- Change bookable services and prices shown to customers.
+- Change service durations in 30-minute increments.
+- Change working hours.
+- Block/unblock dates.
+
+Admin sessions use an HttpOnly, Secure, SameSite=Lax cookie and Cloudflare KV. Cloudflare specifically documents KV as suitable for authentication details/tokens. citeturn4search0turn3search1
+
+## Cloudflare setup
+
+The repository contains the application code, but the Cloudflare resource IDs and admin password must stay outside GitHub.
+
+1. Create the production D1 database:
+
+```bash
+npx wrangler d1 create sootdestroyer-bookings
+```
+
+2. Create the session KV namespace:
+
+```bash
+npx wrangler kv namespace create SESSIONS
+```
+
+3. Put the returned D1 `database_id` and KV `id` into `wrangler.jsonc`, replacing the two `REPLACE_WITH_...` values. Cloudflare requires both IDs for bindings. citeturn2search1turn4search2
+
+4. Apply the booking schema to production D1:
+
+```bash
+npx wrangler d1 migrations apply sootdestroyer-bookings --remote
+```
+
+5. Set the admin credentials as Worker secrets:
+
+```bash
+npx wrangler secret put ADMIN_EMAIL
+npx wrangler secret put ADMIN_PASSWORD
+```
+
+6. Deploy the Worker:
+
+```bash
+npx wrangler deploy
+```
+
+Cloudflare Workers can serve the existing static assets and run the `/api/*` Worker routes as one deployment. citeturn1search4turn1search1
+
+### Important
+
+The starter service durations are deliberately editable in the admin panel. The existing site gives prices but does not provide verified appointment durations, so durations should be confirmed with Liam before opening online booking to customers.
+
+The same applies to working hours: the migration seeds Monday–Saturday 09:00–17:00 and Sunday closed as a starting configuration; update this in the admin panel to the real business hours before launch.
+
+## Existing site
+
+All existing marketing pages and assets remain at repository root, including:
+
+- `index.html`
+- `services.html`
+- `chimney-sweeping.html`
+- `stove-installation.html`
+- `stove-packages.html`
+- `pricing.html`
+- `gallery.html`
+- `show-room.html`
+- `reviews.html`
+- `areas.html`
+- `about.html`
+- `contact.html`
+- `faqs.html`
+- `quote.html`
+- `privacy.html`
+- `terms.html`
+- shared CSS/JavaScript and image/video assets
