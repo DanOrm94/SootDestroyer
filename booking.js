@@ -7,11 +7,19 @@
   const normalizeDate=value=>{
     const raw=String(value||'').trim();
     if(/^\d{4}-\d{2}-\d{2}$/.test(raw)) return raw;
-    const match=raw.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+    const match=raw.match(/^(\d{1,2})[\/\-.](\d{1,2})[\/\-.](\d{4})$/);
     if(match) return `${match[3]}-${String(match[2]).padStart(2,'0')}-${String(match[1]).padStart(2,'0')}`;
     return '';
   };
-  const getDate=()=>normalizeDate(dateEl.value);
+  const getDate=()=>{
+    const value=normalizeDate(dateEl.value);
+    if(value) return value;
+    if(dateEl.valueAsDate instanceof Date && !Number.isNaN(dateEl.valueAsDate.getTime())){
+      const d=dateEl.valueAsDate;
+      return `${d.getUTCFullYear()}-${String(d.getUTCMonth()+1).padStart(2,'0')}-${String(d.getUTCDate()).padStart(2,'0')}`;
+    }
+    return '';
+  };
   dateEl.min=iso(today); dateEl.value=iso(today);
   const money=s=>s.price_label || 'POA';
   const durationLabels={'free-installation-survey':'1 hr','chimney-sweep':'1 hr 15 mins','chimney-sweep-2':'1 hr 45 mins','chimney-sweep-3':'2 hrs 30 mins','chimney-sweep-4':'3 hrs 15 mins','chimney-sweep-cctv':'2 hrs','cctv-inspection':'1 hr','other':'7 mins'};
@@ -39,7 +47,7 @@
     selectedTime.value='';
     summaryEl.textContent=`${service.name} · ${duration(service)} appointment · ${money(service)}`;
     slotsEl.innerHTML='<div class="empty-state">Checking live availability…</div>';
-    const res=await fetch(`/api/availability?date=${encodeURIComponent(date)}&service=${encodeURIComponent(service.id)}`); const data=await res.json();
+    const res=await fetch(`/api/availability?date=${encodeURIComponent(date)}&service=${encodeURIComponent(service.id)}&v=2`); const data=await res.json();
     if(!res.ok){slotsEl.innerHTML=`<div class="empty-state">${data.error||'Unable to load availability.'}</div>`;return;}
     if(!data.slots?.length){slotsEl.innerHTML='<div class="empty-state">No appointments are available on this date. Try another day.</div>';return;}
     slotsEl.innerHTML=data.slots.map(t=>`<button class="slot" type="button" data-time="${t}">${t}</button>`).join('');
