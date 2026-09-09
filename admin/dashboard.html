@@ -1,6 +1,5 @@
 <!doctype html>
 <html lang="en">
-
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width,initial-scale=1">
@@ -10,7 +9,6 @@
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Manrope:wght@600;700;800&display=swap">
     <link rel="stylesheet" href="/admin.css">
 </head>
-
 <body>
     <div id="app" hidden>
         <header class="admin-head">
@@ -23,7 +21,25 @@
                 <div class="panel-head"><div><span class="eyebrow">Live schedule</span><h2>Calendar</h2></div><div class="range"><button id="calPrev">←</button><input id="calDate" type="date"><button id="calNext">→</button></div></div>
                 <div id="calendarGrid" class="calendar-grid"></div>
             </section>
-            <section id="bookings" class="panel"><div class="panel-head"><div><span class="eyebrow">Customer records</span><h2>Bookings</h2></div><button id="refreshBookings" class="small-btn">Refresh</button></div><div id="bookingTable" class="table-wrap"></div></section>
+            <section id="bookings" class="panel">
+                <div class="panel-head"><div><span class="eyebrow">Customer records</span><h2>Bookings</h2></div><div><button id="addBooking" class="small-btn">Add booking</button> <button id="refreshBookings" class="small-btn">Refresh</button></div></div>
+                <form id="manualBookingForm" class="manual-booking" hidden>
+                    <div class="manual-booking-head"><div><strong>Add a booking manually</strong><span>This blocks the selected time just like an online booking.</span></div></div>
+                    <div class="manual-grid">
+                        <label>Service<select id="manualService" required></select></label>
+                        <label>Date<input id="manualDate" type="date" required></label>
+                        <label>Time<input id="manualTime" type="time" step="900" required></label>
+                        <label>Name<input id="manualName" required placeholder="Customer name"></label>
+                        <label>Phone<input id="manualPhone" required type="tel" placeholder="07xxx xxxxxx"></label>
+                        <label>Email<input id="manualEmail" required type="email" placeholder="customer@example.com"></label>
+                        <label>Postcode<input id="manualPostcode" required placeholder="OL5..."></label>
+                        <label>Address<input id="manualAddress" placeholder="House number and street"></label>
+                        <label class="full">Notes<textarea id="manualNotes" rows="3" placeholder="Anything useful about the job"></textarea></label>
+                    </div>
+                    <div class="manual-actions"><button type="submit" class="small-btn">Save booking</button><button type="button" id="cancelManualBooking" class="cancel-btn">Cancel</button><span id="manualBookingMessage"></span></div>
+                </form>
+                <div id="bookingTable" class="table-wrap"></div>
+            </section>
             <section id="services" class="panel"><div class="panel-head"><div><span class="eyebrow">What customers can book</span><h2>Services</h2></div><button id="addService" class="small-btn">Add service</button></div><div id="serviceList" class="service-list"></div></section>
             <section id="hours" class="panel"><div class="panel-head"><div><span class="eyebrow">Availability rules</span><h2>Working hours</h2></div><button id="saveHours" class="small-btn">Save hours</button></div><div id="hoursList" class="hours-list"></div></section>
             <section id="blocked" class="panel"><div class="panel-head"><div><span class="eyebrow">Days off</span><h2>Blocked dates</h2></div><form id="blockedForm" class="inline-form"><input id="blockedDate" type="date" required><input id="blockedReason" placeholder="Reason"><button>Add blocked date</button></form></div><div id="blockedList" class="blocked-list"></div></section>
@@ -31,5 +47,4 @@
     </div>
     <script src="/admin-dashboard.js"></script>
 </body>
-
 </html>
