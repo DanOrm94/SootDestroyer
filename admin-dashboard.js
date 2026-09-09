@@ -23,14 +23,24 @@
   }
   $('calDate').addEventListener('change',()=>{calDate=new Date(`${$('calDate').value}T12:00:00`);loadCalendar()});$('calPrev').addEventListener('click',()=>{calDate.setDate(calDate.getDate()-7);$('calDate').value=iso(calDate);loadCalendar()});$('calNext').addEventListener('click',()=>{calDate.setDate(calDate.getDate()+7);$('calDate').value=iso(calDate);loadCalendar()});
 
+  async function changeBookingStatus(id,next){
+    if(next==='cancelled' && !confirm('Cancel this booking? The appointment time will immediately become available again.')) return false;
+    await api('/api/admin/bookings/'+encodeURIComponent(id),{method:'PATCH',body:JSON.stringify({status:next})});
+    await loadAll();
+    return true;
+  }
+
   async function loadBookings(){
     const d=await api('/api/admin/bookings?from=2000-01-01&to=2100-12-31');
-    const rows=(d.bookings||[]).map(b=>`<tr><td><strong>${esc(b.date)}</strong><br>${esc(b.start_time)}–${esc(b.end_time)}</td><td><strong>${esc(b.name)}</strong><br>${esc(b.phone)}<br>${esc(b.email)}<br>${esc(b.address)} ${esc(b.postcode)}</td><td>${esc(b.service_name)}<br>${esc(b.price_label||'')}</td><td>${esc(b.notes)}</td><td><select class="status-select ${esc(b.status)}" data-id="${esc(b.id)}"><option value="pending" ${b.status==='pending'?'selected':''}>Pending</option><option value="confirmed" ${b.status==='confirmed'?'selected':''}>Confirmed</option><option value="completed" ${b.status==='completed'?'selected':''}>Completed</option><option value="cancelled" ${b.status==='cancelled'?'selected':''}>Cancelled</option></select></td></tr>`).join('');
+    const rows=(d.bookings||[]).map(b=>`<tr><td><strong>${esc(b.date)}</strong><br>${esc(b.start_time)}–${esc(b.end_time)}</td><td><strong>${esc(b.name)}</strong><br>${esc(b.phone)}<br>${esc(b.email)}<br>${esc(b.address)} ${esc(b.postcode)}</td><td>${esc(b.service_name)}<br>${esc(b.price_label||'')}</td><td>${esc(b.notes)}</td><td><div class="status-actions"><select class="status-select ${esc(b.status)}" data-id="${esc(b.id)}"><option value="pending" ${b.status==='pending'?'selected':''}>Pending</option><option value="confirmed" ${b.status==='confirmed'?'selected':''}>Confirmed</option><option value="completed" ${b.status==='completed'?'selected':''}>Completed</option><option value="cancelled" ${b.status==='cancelled'?'selected':''}>Cancelled</option></select><button type="button" class="booking-cancel-btn" data-id="${esc(b.id)}" ${b.status==='cancelled'?'disabled':''}>${b.status==='cancelled'?'Cancelled':'Cancel booking'}</button></div></td></tr>`).join('');
     $('bookingTable').innerHTML=`<table class="booking-table"><thead><tr><th>When</th><th>Customer</th><th>Service</th><th>Notes</th><th>Status</th></tr></thead><tbody>${rows||'<tr><td colspan="5">No bookings.</td></tr>'}</tbody></table>`;
     $('bookingTable').querySelectorAll('.status-select').forEach(s=>s.addEventListener('change',async()=>{
       const next=s.value;
-      if(next==='cancelled' && !confirm('Cancel this booking? The appointment time will immediately become available again.')){await loadBookings();return;}
-      try{await api('/api/admin/bookings/'+encodeURIComponent(s.dataset.id),{method:'PATCH',body:JSON.stringify({status:next})});await loadAll();}
+      try{await changeBookingStatus(s.dataset.id,next);}
+      catch(err){alert(err.message);await loadBookings();}
+    }));
+    $('bookingTable').querySelectorAll('.booking-cancel-btn').forEach(btn=>btn.addEventListener('click',async()=>{
+      try{await changeBookingStatus(btn.dataset.id,'cancelled');}
       catch(err){alert(err.message);await loadBookings();}
     }));
   }
