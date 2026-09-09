@@ -1,4 +1,4 @@
-PRAGMA foreign_keys = OFF;
+PRAGMA defer_foreign_keys = ON;
 
 BEGIN TRANSACTION;
 
@@ -21,7 +21,6 @@ CREATE TABLE bookings_new (
   updated_at TEXT NOT NULL
 );
 
--- booking_slots is rebuilt below, so existing bookings can be copied safely.
 INSERT INTO bookings_new (
   id, service_id, date, start_time, end_time, name, phone, email,
   address, postcode, notes, status, created_at, updated_at
@@ -61,5 +60,4 @@ FROM slots;
 
 COMMIT;
 
-PRAGMA foreign_keys = ON;
 PRAGMA foreign_key_check;
