@@ -1,7 +1,3 @@
-PRAGMA defer_foreign_keys = ON;
-
-BEGIN TRANSACTION;
-
 -- The original bookings table only allowed confirmed/completed/cancelled.
 -- Rebuild it so online requests can remain pending until Liam confirms them.
 CREATE TABLE bookings_new (
@@ -30,6 +26,8 @@ SELECT
   address, postcode, notes, status, created_at, updated_at
 FROM bookings;
 
+-- Rebuild the slot table as well so existing reservations can be backfilled
+-- using the current 15-minute slot system.
 DROP TABLE booking_slots;
 DROP TABLE bookings;
 ALTER TABLE bookings_new RENAME TO bookings;
@@ -57,7 +55,5 @@ WITH RECURSIVE slots(booking_id,date,slot_time,end_time) AS (
 INSERT OR IGNORE INTO booking_slots(date,slot_time,booking_id)
 SELECT date,slot_time,booking_id
 FROM slots;
-
-COMMIT;
 
 PRAGMA foreign_key_check;
