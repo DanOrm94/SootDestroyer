@@ -6,7 +6,8 @@
   const iso=d=>{const y=d.getFullYear(),m=String(d.getMonth()+1).padStart(2,'0'),day=String(d.getDate()).padStart(2,'0');return `${y}-${m}-${day}`};
   dateEl.min=iso(today); dateEl.value=iso(today);
   const money=s=>s.price_label || 'POA';
-  const duration=s=>s.duration_label || `${s.duration_minutes} mins`;
+  const durationLabels={'free-installation-survey':'1 hr','chimney-sweep':'1 hr 15 mins','chimney-sweep-2':'1 hr 45 mins','chimney-sweep-3':'2 hrs 30 mins','chimney-sweep-4':'3 hrs 15 mins','chimney-sweep-cctv':'2 hrs','cctv-inspection':'1 hr','other':'7 mins'};
+  const duration=s=>durationLabels[s.id] || `${s.duration_minutes} mins`;
   function renderServices(){
     serviceEl.innerHTML=services.map(s=>`<option value="${s.id}">${s.name}</option>`).join('');
     choicesEl.innerHTML=services.map((s,i)=>`<button type="button" class="service-card${i===0?' selected':''}" data-service="${s.id}"><span class="service-card-main"><strong>${s.name}</strong><span>${duration(s)} · ${money(s)}</span></span><span class="service-card-desc">${s.description||''}</span><span class="service-card-arrow">Book</span></button>`).join('');
