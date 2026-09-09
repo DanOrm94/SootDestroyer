@@ -1,5 +1,7 @@
 // Shared sub-page header/menu behaviour and navigation enhancements.
 (function(){
+  const BOOKING_URL='https://sootdestroyer.danielorm.workers.dev/booking';
+
   if(!document.querySelector('link[data-subpage-header]')){
     const style=document.createElement('link');
     style.rel='stylesheet';
@@ -47,18 +49,17 @@
     }
   }
 
-  document.querySelectorAll('a[href="booking.html"], a[href="/booking.html"]').forEach(link=>{
-    link.addEventListener('click',e=>{
-      e.preventDefault();
-      if(location.pathname.endsWith('/index.html') || location.pathname.endsWith('/')){
-        const target=document.getElementById('booking');
-        if(target) target.scrollIntoView({behavior:'smooth',block:'start'});
+  // Every Book Now CTA goes directly to the live Cloudflare booking app.
+  document.querySelectorAll('a, button').forEach(element=>{
+    const label=element.textContent.trim().replace(/\s+/g,' ');
+    const href=element.getAttribute('href')||'';
+    if(/^book now$/i.test(label)||/(?:^|\/)booking\.html(?:$|[?#])/i.test(href)){
+      if(element.tagName==='A'){
+        element.href=BOOKING_URL;
       }else{
-        window.location.href='index.html#booking';
+        element.addEventListener('click',()=>{window.location.href=BOOKING_URL;});
       }
-      nav?.classList.remove('open');
-      menu?.setAttribute('aria-expanded','false');
-    });
+    }
   });
 
   document.querySelectorAll('.header nav a').forEach(a=>a.addEventListener('click',()=>{
