@@ -34,6 +34,20 @@ function toMinutes(t) { const [h,m] = t.split(':').map(Number); return h*60+m; }
 function fromMinutes(v) { return `${String(Math.floor(v/60)).padStart(2,'0')}:${String(v%60).padStart(2,'0')}`; }
 function nowIso() { return new Date().toISOString(); }
 
+async function notifyAdmin(env, subject, text) {
+  if (!env.EMAIL || !env.ADMIN_EMAIL) return;
+  try {
+    await env.EMAIL.send({
+      to: env.ADMIN_EMAIL,
+      from: { email: 'notifications@sootdestroyer.co.uk', name: 'Soot Destroyer' },
+      subject,
+      text
+    });
+  } catch (error) {
+    console.error('Admin notification email failed:', error);
+  }
+}
+
 async function services(env, includeInactive=false) {
   const q = includeInactive ? 'SELECT * FROM services ORDER BY sort_order, name' : 'SELECT * FROM services WHERE active=1 ORDER BY sort_order, name';
   return (await env.DB.prepare(q).all()).results || [];
@@ -87,6 +101,20 @@ async function createBooking(request, env) {
   const slotSql = slots.map(time => env.DB.prepare('INSERT INTO booking_slots (date, slot_time, booking_id) VALUES (?,?,?)').bind(body.date, time, id));
   try { await env.DB.batch([bookingSql, ...slotSql]); }
   catch (error) { console.error(error); return bad('That time has just been booked. Please choose another slot.', 409); }
+  await notifyAdmin(env, `New booking — ${String(body.name).trim()}`, [
+    'A new booking has been added to the Soot Destroyer database.',
+    '',
+    `Booking ID: ${id}`,
+    `Customer: ${String(body.name).trim()}`,
+    `Phone: ${String(body.phone).trim()}`,
+    `Email: ${String(body.email).trim()}`,
+    `Service: ${service.name}`,
+    `Date: ${body.date}`,
+    `Time: ${body.time}–${fromMinutes(endMin)}`,
+    `Address: ${String(body.address||'').trim()}`,
+    `Postcode: ${String(body.postcode).trim()}`,
+    `Notes: ${String(body.notes||'').trim() || 'None'}`
+  ].join('\n'));
   return json({ ok:true, booking:{ id, service:service.name, date:body.date, time:body.time, end_time:fromMinutes(endMin), name:String(body.name).trim() } }, 201);
 }
 
@@ -99,19 +127,22 @@ async function createQuoteRequest(request, env) {
   if (!/^\S+@\S+\.\S+$/.test(email)) return bad('Invalid email address');
   const id = crypto.randomUUID();
   await env.DB.prepare(`INSERT INTO quote_requests (id,name,phone,email,total_price,stove_choice,flue_choice,hearth_choice,beam_choice,chamber_choice,created_at,status) VALUES (?,?,?,?,?,?,?,?,?,?,?,?)`).bind(
-    id,
-    String(body.name).trim(),
-    String(body.phone).trim(),
-    email,
-    String(body.total_price).trim(),
-    String(body.stove_choice).trim(),
-    String(body.flue_choice).trim(),
-    String(body.hearth_choice).trim(),
-    String(body.beam_choice).trim(),
-    String(body.chamber_choice).trim(),
-    nowIso(),
-    'new'
+    id, String(body.name).trim(), String(body.phone).trim(), email, String(body.total_price).trim(), String(body.stove_choice).trim(), String(body.flue_choice).trim(), String(body.hearth_choice).trim(), String(body.beam_choice).trim(), String(body.chamber_choice).trim(), nowIso(), 'new'
   ).run();
+  await notifyAdmin(env, `New quote request — ${String(body.name).trim()}`, [
+    'A new quote request has been added to the Soot Destroyer database.',
+    '',
+    `Quote ID: ${id}`,
+    `Customer: ${String(body.name).trim()}`,
+    `Phone: ${String(body.phone).trim()}`,
+    `Email: ${email}`,
+    `Estimated total: ${String(body.total_price).trim()}`,
+    `Stove: ${String(body.stove_choice).trim()}`,
+    `Flue: ${String(body.flue_choice).trim()}`,
+    `Hearth: ${String(body.hearth_choice).trim()}`,
+    `Beam: ${String(body.beam_choice).trim()}`,
+    `Chamber: ${String(body.chamber_choice).trim()}`
+  ].join('\n'));
   return json({ ok:true, quote:{ id } }, 201);
 }
 
@@ -134,6 +165,7 @@ async function adminData(path, request, env) {
     const b=await request.json(); const duration=Number(b.duration_minutes); const id=crypto.randomUUID();
     if (!b.name || !Number.isInteger(duration) || duration < SLOT_MINUTES || duration % SLOT_MINUTES) return bad('Name and a duration in 30-minute increments are required');
     await env.DB.prepare('INSERT INTO services (id,name,description,price_label,duration_minutes,active,sort_order) VALUES (?,?,?,?,?,?,?)').bind(id,b.name,b.description||'',b.price_label||'POA',duration,b.active===false?0:1,Number(b.sort_order||0)).run();
+    await notifyAdmin(env, 'Database updated — service added', `Service added: ${b.name} (${duration} minutes, ${b.price_label||'POA'})`);
     return json({ service: await env.DB.prepare('SELECT * FROM services WHERE id=?').bind(id).first() },201);
   }
   if (path.startsWith('/api/admin/services/') && request.method === 'PATCH') {
@@ -141,21 +173,27 @@ async function adminData(path, request, env) {
     const id=path.split('/').pop(); const b=await request.json(); const duration=Number(b.duration_minutes);
     if (!b.name || !Number.isInteger(duration) || duration < SLOT_MINUTES || duration % SLOT_MINUTES) return bad('Name and a duration in 30-minute increments are required');
     await env.DB.prepare('UPDATE services SET name=?,description=?,price_label=?,duration_minutes=?,active=?,sort_order=? WHERE id=?').bind(b.name,b.description||'',b.price_label||'POA',duration,b.active?1:0,Number(b.sort_order||0),id).run();
+    await notifyAdmin(env, 'Database updated — service changed', `Service updated: ${b.name} (ID: ${id})`);
     return json({ service: await env.DB.prepare('SELECT * FROM services WHERE id=?').bind(id).first() });
   }
   if (path === '/api/admin/hours' && request.method === 'GET') return json({ hours:(await env.DB.prepare('SELECT * FROM business_hours ORDER BY day_of_week').all()).results||[] });
   if (path === '/api/admin/hours' && request.method === 'PUT') {
     if (!sameOrigin(request)) return bad('Forbidden',403); const b=await request.json();
     await env.DB.batch((b.hours||[]).map(h=>env.DB.prepare('UPDATE business_hours SET is_open=?, open_time=?, close_time=? WHERE day_of_week=?').bind(h.is_open?1:0,h.open_time,h.close_time,Number(h.day_of_week))));
+    await notifyAdmin(env, 'Database updated — business hours changed', 'Business hours were updated from the admin dashboard.');
     return json({ok:true});
   }
   if (path === '/api/admin/blocked' && request.method === 'GET') return json({ blocked:(await env.DB.prepare('SELECT * FROM blocked_dates ORDER BY date').all()).results||[] });
   if (path === '/api/admin/blocked' && request.method === 'POST') {
     if (!sameOrigin(request)) return bad('Forbidden',403); const b=await request.json(); if(!localDate(b.date)) return bad('Invalid date');
-    await env.DB.prepare('INSERT OR IGNORE INTO blocked_dates (date,reason) VALUES (?,?)').bind(b.date,b.reason||'Unavailable').run(); return json({ok:true},201);
+    await env.DB.prepare('INSERT OR IGNORE INTO blocked_dates (date,reason) VALUES (?,?)').bind(b.date,b.reason||'Unavailable').run();
+    await notifyAdmin(env, 'Database updated — date blocked', `Blocked date added: ${b.date}\nReason: ${b.reason||'Unavailable'}`);
+    return json({ok:true},201);
   }
   if (path.startsWith('/api/admin/blocked/') && request.method === 'DELETE') {
-    if (!sameOrigin(request)) return bad('Forbidden',403); const date=decodeURIComponent(path.split('/').pop()); await env.DB.prepare('DELETE FROM blocked_dates WHERE date=?').bind(date).run(); return json({ok:true});
+    if (!sameOrigin(request)) return bad('Forbidden',403); const date=decodeURIComponent(path.split('/').pop()); await env.DB.prepare('DELETE FROM blocked_dates WHERE date=?').bind(date).run();
+    await notifyAdmin(env, 'Database updated — blocked date removed', `Blocked date removed: ${date}`);
+    return json({ok:true});
   }
   if (path.startsWith('/api/admin/bookings/') && request.method === 'PATCH') {
     if (!sameOrigin(request)) return bad('Forbidden',403); const id=path.split('/').pop(); const b=await request.json();
@@ -164,6 +202,7 @@ async function adminData(path, request, env) {
     if(booking.status==='cancelled' && b.status!=='cancelled') return bad('Cancelled bookings cannot be reactivated; create a new booking',409);
     if(b.status==='cancelled') await env.DB.batch([env.DB.prepare('UPDATE bookings SET status=?,updated_at=? WHERE id=?').bind(b.status,nowIso(),id), env.DB.prepare('DELETE FROM booking_slots WHERE booking_id=?').bind(id)]);
     else await env.DB.prepare('UPDATE bookings SET status=?,updated_at=? WHERE id=?').bind(b.status,nowIso(),id).run();
+    await notifyAdmin(env, `Database updated — booking ${b.status}`, `Booking ${id} was changed from ${booking.status} to ${b.status}.`);
     return json({ok:true});
   }
   return bad('Not found',404);
@@ -171,7 +210,7 @@ async function adminData(path, request, env) {
 
 async function handleApi(request, env) {
   const url=new URL(request.url), path=url.pathname;
-  if(path==='/api/health') return json({ok:true, database:!!env.DB});
+  if(path==='/api/health') return json({ok:true, database:!!env.DB, email:!!env.EMAIL});
   if(path==='/api/services' && request.method==='GET') return json({services:await services(env)});
   if(path==='/api/availability' && request.method==='GET') {
     try { return json(await availability(url.searchParams.get('date'),url.searchParams.get('service'),env)); } catch(e) { return bad(e.message,400); }
