@@ -40,12 +40,12 @@
   form.addEventListener('submit',async e=>{
     e.preventDefault(); message.className='booking-message';
     if(!selectedTime.value){message.textContent='Please choose an appointment time first.';message.className='booking-message error';return;}
-    button.disabled=true;button.textContent='Saving booking…';
+    button.disabled=true;button.textContent='Sending booking request…';
     const payload={service_id:serviceEl.value,date:dateEl.value,time:selectedTime.value,name:document.getElementById('name').value,phone:document.getElementById('phone').value,email:document.getElementById('email').value,postcode:document.getElementById('postcode').value,address:document.getElementById('address').value,notes:document.getElementById('notes').value};
     try{
       const res=await fetch('/api/bookings',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify(payload)}); const data=await res.json();
       if(!res.ok) throw new Error(data.error||'Unable to create booking');
-      message.innerHTML=`<strong>Booking confirmed.</strong><br>${data.booking.service} on ${data.booking.date} at ${data.booking.time}. Your reference is <strong>${data.booking.id.slice(0,8).toUpperCase()}</strong>.`;
+      message.innerHTML=`<strong>Booking request received — pending confirmation.</strong><br>${data.booking.service} on ${data.booking.date} at ${data.booking.time}. Liam will confirm the appointment. Your reference is <strong>${data.booking.id.slice(0,8).toUpperCase()}</strong>.`;
       message.className='booking-message success'; form.reset(); selectedTime.value=''; dateEl.value=iso(today); await loadSlots();
     }catch(err){message.textContent=err.message;message.className='booking-message error';await loadSlots();}
     finally{button.disabled=false;button.textContent='Confirm booking →';}
