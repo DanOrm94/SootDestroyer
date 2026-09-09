@@ -1,5 +1,6 @@
 const menuToggle = document.querySelector(".menu-toggle");
 const nav = document.querySelector(".nav");
+const BOOKING_URL = "https://sootdestroyer.danielorm.workers.dev/booking";
 
 // Blend the JPG logo into the warm header background.
 if (!document.querySelector('link[data-logo-blend]')) {
@@ -32,6 +33,19 @@ if (nav) {
     const cta=nav.querySelector(".nav-cta"); nav.insertBefore(link,cta||null);
   }
 }
+
+// Every Book Now CTA goes directly to the live Cloudflare booking app.
+document.querySelectorAll('a, button').forEach(element => {
+  const label = element.textContent.trim().replace(/\s+/g, ' ');
+  const href = element.getAttribute('href') || '';
+  if (/^book now$/i.test(label) || /(?:^|\/)booking\.html(?:$|[?#])/i.test(href)) {
+    if (element.tagName === 'A') {
+      element.href = BOOKING_URL;
+    } else {
+      element.addEventListener('click', () => { window.location.href = BOOKING_URL; });
+    }
+  }
+});
 
 document.querySelectorAll('a[href^="tel:"]').forEach(link => {
   link.href = "tel:+447442174051";
