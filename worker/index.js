@@ -28,8 +28,8 @@ function sameOrigin(request) {
   const origin = request.headers.get('Origin');
   return !origin || origin === new URL(request.url).origin;
 }
-function localDate(date) { return /^\d{4}-\d{2}-\d{2}$/.test(date || ''); }
-function localTime(time) { return /^\d{2}:\d{2}$/.test(time || ''); }
+function localDate(date) { return /^\\d{4}-\\d{2}-\\d{2}$/.test(date || ''); }
+function localTime(time) { return /^\\d{2}:\\d{2}$/.test(time || ''); }
 function toMinutes(t) { const [h,m] = t.split(':').map(Number); return h*60+m; }
 function fromMinutes(v) { return `${String(Math.floor(v/60)).padStart(2,'0')}:${String(v%60).padStart(2,'0')}`; }
 function nowIso() { return new Date().toISOString(); }
@@ -109,7 +109,14 @@ async function createBooking(request, env, options = {}) {
   );
   const slotSql = slots.map(time => env.DB.prepare('INSERT INTO booking_slots (date, slot_time, booking_id) VALUES (?,?,?)').bind(body.date, time, id));
   try { await env.DB.batch([bookingSql, ...slotSql]); }
-  catch (error) { console.error(error); return bad('That time has just been booked. Please choose another slot.', 409); }
+  catch (error) {
+    console.error(error);
+    const detail = String(error?.message || error || '');
+    if (/check constraint|status/i.test(detail) && /booking|pending|confirmed|completed|cancelled/i.test(detail)) {
+      return bad('The booking database needs migration 0004 applied before pending bookings can be created.', 500);
+    }
+    return bad('That time has just been booked. Please choose another slot.', 409);
+  }
   await notifyAdmin(env, `${status === 'pending' ? 'New booking request' : 'New booking'} — ${String(body.name).trim()}`, [
     `A new ${status === 'pending' ? 'booking request' : 'booking'} has been added to the Soot Destroyer database.`, '',
     `Status: ${status}`, `Booking ID: ${id}`, `Customer: ${String(body.name).trim()}`, `Phone: ${String(body.phone).trim()}`, `Email: ${String(body.email).trim()}`,
@@ -125,7 +132,7 @@ async function createQuoteRequest(request, env) {
   const required = ['name','phone','email','total_price','stove_choice','flue_choice','hearth_choice','beam_choice','chamber_choice'];
   for (const key of required) if (!String(body[key] || '').trim()) return bad(`Missing ${key.replaceAll('_',' ')}`);
   const email = String(body.email).trim().toLowerCase();
-  if (!/^\S+@\S+\.\S+$/.test(email)) return bad('Invalid email address');
+  if (!/^\\S+@\\S+\\.\\S+$/.test(email)) return bad('Invalid email address');
   const id = crypto.randomUUID();
   await env.DB.prepare(`INSERT INTO quote_requests (id,name,phone,email,total_price,stove_choice,flue_choice,hearth_choice,beam_choice,chamber_choice,created_at,status) VALUES (?,?,?,?,?,?,?,?,?,?,?,?)`).bind(
     id, String(body.name).trim(), String(body.phone).trim(), email, String(body.total_price).trim(), String(body.stove_choice).trim(), String(body.flue_choice).trim(), String(body.hearth_choice).trim(), String(body.beam_choice).trim(), String(body.chamber_choice).trim(), nowIso(), 'new'
@@ -184,7 +191,7 @@ async function adminData(path, request, env) {
   if (path === '/api/admin/blocked' && request.method === 'POST') {
     if (!sameOrigin(request)) return bad('Forbidden',403); const b=await request.json(); if(!localDate(b.date)) return bad('Invalid date');
     await env.DB.prepare('INSERT OR IGNORE INTO blocked_dates (date,reason) VALUES (?,?)').bind(b.date,b.reason||'Unavailable').run();
-    await notifyAdmin(env, 'Database updated — date blocked', `Blocked date added: ${b.date}\nReason: ${b.reason||'Unavailable'}`);
+    await notifyAdmin(env, 'Database updated — date blocked', `Blocked date added: ${b.date}\\nReason: ${b.reason||'Unavailable'}`);
     return json({ok:true},201);
   }
   if (path.startsWith('/api/admin/blocked/') && request.method === 'DELETE') {
