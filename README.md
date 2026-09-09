@@ -12,6 +12,7 @@ The live booking flow is now designed around Cloudflare rather than a third-part
 - `admin.js` / `admin.css` — calendar, bookings, services, hours and blocked dates
 - `worker/index.js` — Cloudflare Worker API
 - `migrations/0001_booking_system.sql` — D1 schema and starter services
+- `migrations/0003_booking_services.sql` — current bookable service catalogue and booking-slot backfill
 - `wrangler.jsonc` — Worker, D1 and session-KV bindings
 - `.assetsignore` — prevents server-side source/config files being published as assets
 
@@ -25,7 +26,7 @@ Customers can:
 4. Enter contact/address details and notes.
 5. Confirm the booking.
 
-The booking is written to D1. Availability is backed by 30-minute booking slots, with a unique database key preventing two customers from claiming the same slot. D1 batches the booking write and slot reservations atomically.
+The booking is written to D1. Availability now uses 15-minute booking slots so the supplied 1 hr 15 mins, 1 hr 45 mins and 3 hrs 15 mins services can be scheduled accurately. A unique database key prevents two customers from claiming the same slot. D1 batches the booking write and slot reservations atomically.
 
 Admins can:
 
@@ -34,7 +35,7 @@ Admins can:
 - View all bookings and customer details.
 - Mark bookings confirmed, completed or cancelled.
 - Change bookable services and prices shown to customers.
-- Change service durations in 30-minute increments.
+- Change service durations in 15-minute increments.
 - Change working hours.
 - Block/unblock dates.
 
@@ -81,9 +82,7 @@ The Worker serves the existing static site and handles the `/api/*` booking rout
 
 ### Important before opening online booking
 
-The starter service durations are deliberately editable in the admin panel. The existing site gives prices but does not provide verified appointment durations, so durations should be confirmed with Liam before opening online booking to customers.
-
-The same applies to working hours: the migration seeds Monday–Saturday 09:00–17:00 and Sunday closed as a starting configuration. Update this in the admin panel to the real business hours before launch.
+The current bookable service durations and prices are based on the supplied booking list. The same applies to working hours: the migration seeds Monday–Saturday 09:00–17:00 and Sunday closed as a starting configuration. Update this in the admin panel to the real business hours before launch.
 
 ## Existing site
 
