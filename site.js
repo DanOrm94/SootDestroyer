@@ -1,6 +1,7 @@
 // Shared sub-page header/menu behaviour and navigation enhancements.
 (function(){
   const BOOKING_URL='https://sootdestroyer.danielorm.workers.dev/booking';
+  const CONTACT_EMAIL='liam7388@gmail.com';
 
   if(!document.querySelector('link[data-subpage-header]')){
     const style=document.createElement('link');
@@ -26,6 +27,13 @@
       menu.setAttribute('aria-expanded',String(open));
     });
   }
+
+  // Keep the contact email consistent across every sub-page footer.
+  document.querySelectorAll('.footer a[href^="mailto:"]').forEach(link=>{
+    link.href=`mailto:${CONTACT_EMAIL}`;
+    link.textContent=CONTACT_EMAIL;
+  });
+
   if(nav){
     if(!nav.querySelector('a[href="show-room.html"]')){
       const link=document.createElement('a');link.href='show-room.html';link.textContent='Show Room';
