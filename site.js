@@ -33,6 +33,10 @@
       const link=document.createElement('a');link.href='stove-packages.html';link.textContent='Stove Packages';
       const cta=nav.querySelector('.nav-cta');nav.insertBefore(link,cta||null);
     }
+    if(!nav.querySelector('a[href="quote.html"]')){
+      const link=document.createElement('a');link.href='quote.html';link.textContent='Quote';
+      const cta=nav.querySelector('.nav-cta');nav.insertBefore(link,cta||null);
+    }
     if(!nav.querySelector('a[href="https://burnright.co.uk/"]')){
       const link=document.createElement('a');link.href='https://burnright.co.uk/';link.textContent='BurnRight';link.target='_blank';link.rel='noopener noreferrer';
       const cta=nav.querySelector('.nav-cta');nav.insertBefore(link,cta||null);
@@ -65,10 +69,15 @@
   document.querySelectorAll('.accordion details').forEach(d=>d.addEventListener('toggle',()=>{
     if(d.open)document.querySelectorAll('.accordion details').forEach(x=>{if(x!==d)x.removeAttribute('open')});
   }));
-  document.querySelectorAll('form').forEach(form=>form.addEventListener('submit',e=>{
-    e.preventDefault();
-    const s=form.querySelector('.success');
-    if(s){s.style.display='block';s.classList.add('show');}
-    form.reset();
-  }));
+
+  // Quote requests are handled by quote.html and submitted to the Worker/D1 API.
+  document.querySelectorAll('form').forEach(form=>{
+    if(form.id==='quote-form') return;
+    form.addEventListener('submit',e=>{
+      e.preventDefault();
+      const s=form.querySelector('.success');
+      if(s){s.style.display='block';s.classList.add('show');}
+      form.reset();
+    });
+  });
 })();
