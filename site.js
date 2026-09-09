@@ -113,7 +113,8 @@
   });
 
   document.querySelectorAll('form').forEach(form=>{
-    if(form.id==='quote-form') return;
+    // Booking has its own async submission handler in booking.js.
+    if(form.id==='quote-form' || form.id==='bookingForm') return;
     form.addEventListener('submit',e=>{
       e.preventDefault();
       const s=form.querySelector('.success');
