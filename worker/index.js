@@ -83,7 +83,7 @@ async function availability(date, serviceId, env) {
   return { date, service, slots };
 }
 
-async function createBooking(request, env) {
+async function createBooking(request, env, options = {}) {
   const body = await request.json().catch(() => null);
   if (!body) return bad('Invalid booking details');
   const required = ['service_id','date','time','name','phone','email','postcode'];
@@ -103,19 +103,20 @@ async function createBooking(request, env) {
   if (blocked) return bad('That date is unavailable', 409);
   const id = crypto.randomUUID(), slots = [];
   for (let m=startMin; m<endMin; m+=SLOT_MINUTES) slots.push(fromMinutes(m));
+  const status = options.pending ? 'pending' : 'confirmed';
   const bookingSql = env.DB.prepare(`INSERT INTO bookings (id, service_id, date, start_time, end_time, name, phone, email, address, postcode, notes, status, created_at, updated_at) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?)`).bind(
-    id, service.id, body.date, body.time, fromMinutes(endMin), String(body.name).trim(), String(body.phone).trim(), String(body.email).trim().toLowerCase(), String(body.address||'').trim(), String(body.postcode).trim(), String(body.notes||'').trim(), 'confirmed', nowIso(), nowIso()
+    id, service.id, body.date, body.time, fromMinutes(endMin), String(body.name).trim(), String(body.phone).trim(), String(body.email).trim().toLowerCase(), String(body.address||'').trim(), String(body.postcode).trim(), String(body.notes||'').trim(), status, nowIso(), nowIso()
   );
   const slotSql = slots.map(time => env.DB.prepare('INSERT INTO booking_slots (date, slot_time, booking_id) VALUES (?,?,?)').bind(body.date, time, id));
   try { await env.DB.batch([bookingSql, ...slotSql]); }
   catch (error) { console.error(error); return bad('That time has just been booked. Please choose another slot.', 409); }
-  await notifyAdmin(env, `New booking — ${String(body.name).trim()}`, [
-    'A new booking has been added to the Soot Destroyer database.', '',
-    `Booking ID: ${id}`, `Customer: ${String(body.name).trim()}`, `Phone: ${String(body.phone).trim()}`, `Email: ${String(body.email).trim()}`,
+  await notifyAdmin(env, `${status === 'pending' ? 'New booking request' : 'New booking'} — ${String(body.name).trim()}`, [
+    `A new ${status === 'pending' ? 'booking request' : 'booking'} has been added to the Soot Destroyer database.`, '',
+    `Status: ${status}`, `Booking ID: ${id}`, `Customer: ${String(body.name).trim()}`, `Phone: ${String(body.phone).trim()}`, `Email: ${String(body.email).trim()}`,
     `Service: ${service.name}`, `Date: ${body.date}`, `Time: ${body.time}–${fromMinutes(endMin)}`, `Address: ${String(body.address||'').trim()}`,
     `Postcode: ${String(body.postcode).trim()}`, `Notes: ${String(body.notes||'').trim() || 'None'}`
   ].join('\n'));
-  return json({ ok:true, booking:{ id, service:service.name, date:body.date, time:body.time, end_time:fromMinutes(endMin), name:String(body.name).trim() } }, 201);
+  return json({ ok:true, booking:{ id, service:service.name, date:body.date, time:body.time, end_time:fromMinutes(endMin), name:String(body.name).trim(), status } }, 201);
 }
 
 async function createQuoteRequest(request, env) {
@@ -153,7 +154,7 @@ async function adminData(path, request, env) {
   }
   if (path === '/api/admin/bookings' && request.method === 'POST') {
     if (!sameOrigin(request)) return bad('Forbidden',403);
-    return createBooking(request, env);
+    return createBooking(request, env, { pending: false });
   }
   if (path === '/api/admin/services' && request.method === 'GET') return json({ services: await services(env,true) });
   if (path === '/api/admin/services' && request.method === 'POST') {
@@ -194,7 +195,7 @@ async function adminData(path, request, env) {
   if (path.startsWith('/api/admin/bookings/') && request.method === 'PATCH') {
     if (!sameOrigin(request)) return bad('Forbidden',403); const id=path.split('/').pop(); const b=await request.json();
     const booking=await env.DB.prepare('SELECT * FROM bookings WHERE id=?').bind(id).first(); if(!booking) return bad('Booking not found',404);
-    if(!['confirmed','completed','cancelled'].includes(b.status)) return bad('Invalid status');
+    if(!['pending','confirmed','completed','cancelled'].includes(b.status)) return bad('Invalid status');
     if(booking.status==='cancelled' && b.status!=='cancelled') return bad('Cancelled bookings cannot be reactivated; create a new booking',409);
     if(b.status==='cancelled') await env.DB.batch([env.DB.prepare('UPDATE bookings SET status=?,updated_at=? WHERE id=?').bind(b.status,nowIso(),id), env.DB.prepare('DELETE FROM booking_slots WHERE booking_id=?').bind(id)]);
     else await env.DB.prepare('UPDATE bookings SET status=?,updated_at=? WHERE id=?').bind(b.status,nowIso(),id).run();
@@ -211,7 +212,7 @@ async function handleApi(request, env) {
   if(path==='/api/availability' && request.method==='GET') {
     try { return json(await availability(url.searchParams.get('date'),url.searchParams.get('service'),env)); } catch(e) { return bad(e.message,400); }
   }
-  if(path==='/api/bookings' && request.method==='POST') return createBooking(request,env);
+  if(path==='/api/bookings' && request.method==='POST') return createBooking(request,env,{pending:true});
   if(path==='/api/quotes' && request.method==='POST') return createQuoteRequest(request,env);
   if(path==='/api/auth/login' && request.method==='POST') {
     const b=await request.json().catch(()=>null); const email=String(b?.email||'').trim().toLowerCase(); const password=String(b?.password||'');
