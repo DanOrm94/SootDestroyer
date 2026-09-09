@@ -90,10 +90,39 @@ async function createBooking(request, env) {
   return json({ ok:true, booking:{ id, service:service.name, date:body.date, time:body.time, end_time:fromMinutes(endMin), name:String(body.name).trim() } }, 201);
 }
 
+async function createQuoteRequest(request, env) {
+  const body = await request.json().catch(() => null);
+  if (!body) return bad('Invalid quote request');
+  const required = ['name','phone','email','total_price','stove_choice','flue_choice','hearth_choice','beam_choice','chamber_choice'];
+  for (const key of required) if (!String(body[key] || '').trim()) return bad(`Missing ${key.replaceAll('_',' ')}`);
+  const email = String(body.email).trim().toLowerCase();
+  if (!/^\S+@\S+\.\S+$/.test(email)) return bad('Invalid email address');
+  const id = crypto.randomUUID();
+  await env.DB.prepare(`INSERT INTO quote_requests (id,name,phone,email,total_price,stove_choice,flue_choice,hearth_choice,beam_choice,chamber_choice,created_at,status) VALUES (?,?,?,?,?,?,?,?,?,?,?,?)`).bind(
+    id,
+    String(body.name).trim(),
+    String(body.phone).trim(),
+    email,
+    String(body.total_price).trim(),
+    String(body.stove_choice).trim(),
+    String(body.flue_choice).trim(),
+    String(body.hearth_choice).trim(),
+    String(body.beam_choice).trim(),
+    String(body.chamber_choice).trim(),
+    nowIso(),
+    'new'
+  ).run();
+  return json({ ok:true, quote:{ id } }, 201);
+}
+
 async function adminData(path, request, env) {
   const admin = await requireAdmin(request, env);
   if (!admin) return bad('Unauthorised', 401);
   if (path === '/api/admin/me') return json({ ok:true, email:admin.email });
+  if (path === '/api/admin/quotes' && request.method === 'GET') {
+    const rows = await env.DB.prepare('SELECT * FROM quote_requests ORDER BY created_at DESC').all();
+    return json({ quotes: rows.results || [] });
+  }
   if (path === '/api/admin/bookings' && request.method === 'GET') {
     const url = new URL(request.url);
     const rows = await env.DB.prepare(`SELECT b.*, s.name service_name, s.duration_minutes, s.price_label FROM bookings b JOIN services s ON s.id=b.service_id WHERE b.date BETWEEN ? AND ? ORDER BY b.date, b.start_time`).bind(url.searchParams.get('from') || '2000-01-01', url.searchParams.get('to') || '2100-12-31').all();
@@ -148,6 +177,7 @@ async function handleApi(request, env) {
     try { return json(await availability(url.searchParams.get('date'),url.searchParams.get('service'),env)); } catch(e) { return bad(e.message,400); }
   }
   if(path==='/api/bookings' && request.method==='POST') return createBooking(request,env);
+  if(path==='/api/quotes' && request.method==='POST') return createQuoteRequest(request,env);
   if(path==='/api/auth/login' && request.method==='POST') {
     const b=await request.json().catch(()=>null); const email=String(b?.email||'').trim().toLowerCase(); const password=String(b?.password||'');
     const adminEmail=String(env.ADMIN_EMAIL||'admin@sootdestroyer.co.uk').toLowerCase();
