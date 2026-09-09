@@ -35,14 +35,22 @@ function fromMinutes(v) { return `${String(Math.floor(v/60)).padStart(2,'0')}:${
 function nowIso() { return new Date().toISOString(); }
 
 async function notifyAdmin(env, subject, text) {
-  if (!env.EMAIL || !env.ADMIN_EMAIL) return;
+  if (!env.RESEND_API_KEY || !env.ADMIN_EMAIL) return;
   try {
-    await env.EMAIL.send({
-      to: env.ADMIN_EMAIL,
-      from: { email: 'notifications@sootdestroyer.co.uk', name: 'Soot Destroyer' },
-      subject,
-      text
+    const response = await fetch('https://api.resend.com/emails', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${env.RESEND_API_KEY}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        from: env.RESEND_FROM || 'Soot Destroyer <notifications@sootdestroyer.co.uk>',
+        to: [env.ADMIN_EMAIL],
+        subject,
+        text
+      })
     });
+    if (!response.ok) console.error('Admin notification email failed:', response.status, await response.text());
   } catch (error) {
     console.error('Admin notification email failed:', error);
   }
@@ -102,18 +110,10 @@ async function createBooking(request, env) {
   try { await env.DB.batch([bookingSql, ...slotSql]); }
   catch (error) { console.error(error); return bad('That time has just been booked. Please choose another slot.', 409); }
   await notifyAdmin(env, `New booking — ${String(body.name).trim()}`, [
-    'A new booking has been added to the Soot Destroyer database.',
-    '',
-    `Booking ID: ${id}`,
-    `Customer: ${String(body.name).trim()}`,
-    `Phone: ${String(body.phone).trim()}`,
-    `Email: ${String(body.email).trim()}`,
-    `Service: ${service.name}`,
-    `Date: ${body.date}`,
-    `Time: ${body.time}–${fromMinutes(endMin)}`,
-    `Address: ${String(body.address||'').trim()}`,
-    `Postcode: ${String(body.postcode).trim()}`,
-    `Notes: ${String(body.notes||'').trim() || 'None'}`
+    'A new booking has been added to the Soot Destroyer database.', '',
+    `Booking ID: ${id}`, `Customer: ${String(body.name).trim()}`, `Phone: ${String(body.phone).trim()}`, `Email: ${String(body.email).trim()}`,
+    `Service: ${service.name}`, `Date: ${body.date}`, `Time: ${body.time}–${fromMinutes(endMin)}`, `Address: ${String(body.address||'').trim()}`,
+    `Postcode: ${String(body.postcode).trim()}`, `Notes: ${String(body.notes||'').trim() || 'None'}`
   ].join('\n'));
   return json({ ok:true, booking:{ id, service:service.name, date:body.date, time:body.time, end_time:fromMinutes(endMin), name:String(body.name).trim() } }, 201);
 }
@@ -130,18 +130,10 @@ async function createQuoteRequest(request, env) {
     id, String(body.name).trim(), String(body.phone).trim(), email, String(body.total_price).trim(), String(body.stove_choice).trim(), String(body.flue_choice).trim(), String(body.hearth_choice).trim(), String(body.beam_choice).trim(), String(body.chamber_choice).trim(), nowIso(), 'new'
   ).run();
   await notifyAdmin(env, `New quote request — ${String(body.name).trim()}`, [
-    'A new quote request has been added to the Soot Destroyer database.',
-    '',
-    `Quote ID: ${id}`,
-    `Customer: ${String(body.name).trim()}`,
-    `Phone: ${String(body.phone).trim()}`,
-    `Email: ${email}`,
-    `Estimated total: ${String(body.total_price).trim()}`,
-    `Stove: ${String(body.stove_choice).trim()}`,
-    `Flue: ${String(body.flue_choice).trim()}`,
-    `Hearth: ${String(body.hearth_choice).trim()}`,
-    `Beam: ${String(body.beam_choice).trim()}`,
-    `Chamber: ${String(body.chamber_choice).trim()}`
+    'A new quote request has been added to the Soot Destroyer database.', '', `Quote ID: ${id}`,
+    `Customer: ${String(body.name).trim()}`, `Phone: ${String(body.phone).trim()}`, `Email: ${email}`, `Estimated total: ${String(body.total_price).trim()}`,
+    `Stove: ${String(body.stove_choice).trim()}`, `Flue: ${String(body.flue_choice).trim()}`, `Hearth: ${String(body.hearth_choice).trim()}`,
+    `Beam: ${String(body.beam_choice).trim()}`, `Chamber: ${String(body.chamber_choice).trim()}`
   ].join('\n'));
   return json({ ok:true, quote:{ id } }, 201);
 }
@@ -210,7 +202,7 @@ async function adminData(path, request, env) {
 
 async function handleApi(request, env) {
   const url=new URL(request.url), path=url.pathname;
-  if(path==='/api/health') return json({ok:true, database:!!env.DB, email:!!env.EMAIL});
+  if(path==='/api/health') return json({ok:true, database:!!env.DB, email:!!env.RESEND_API_KEY});
   if(path==='/api/services' && request.method==='GET') return json({services:await services(env)});
   if(path==='/api/availability' && request.method==='GET') {
     try { return json(await availability(url.searchParams.get('date'),url.searchParams.get('service'),env)); } catch(e) { return bad(e.message,400); }
