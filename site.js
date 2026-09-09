@@ -1,6 +1,6 @@
 // Shared sub-page header/menu behaviour and navigation enhancements.
 (function(){
-  const BOOKING_URL='https://sootdestroyer.danielorm.workers.dev/booking';
+  const BOOKING_URL='https://sootdestroyer.co.uk/booking';
   const CONTACT_EMAIL='liam7388@gmail.com';
 
   if(!document.querySelector('link[data-subpage-header]')){
