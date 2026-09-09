@@ -1,6 +1,6 @@
 const menuToggle = document.querySelector(".menu-toggle");
 const nav = document.querySelector(".nav");
-const BOOKING_URL = "https://sootdestroyer.danielorm.workers.dev/booking";
+const BOOKING_URL = "/booking";
 
 // Blend the JPG logo into the warm header background.
 if (!document.querySelector('link[data-logo-blend]')) {
@@ -34,7 +34,7 @@ if (nav) {
   }
 }
 
-// Every Book Now CTA goes directly to the live Cloudflare booking app.
+// Every Book Now CTA stays on the real website domain.
 document.querySelectorAll('a, button').forEach(element => {
   const label = element.textContent.trim().replace(/\s+/g, ' ');
   const href = element.getAttribute('href') || '';
