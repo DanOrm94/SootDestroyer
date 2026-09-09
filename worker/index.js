@@ -1,5 +1,5 @@
 const SESSION_TTL = 60 * 60 * 12;
-const SLOT_MINUTES = 30;
+const SLOT_MINUTES = 15;
 
 const json = (data, status = 200, extra = {}) => new Response(JSON.stringify(data), {
   status,
@@ -66,7 +66,7 @@ async function availability(date, serviceId, env) {
   const service = await env.DB.prepare('SELECT * FROM services WHERE id=? AND active=1').bind(serviceId).first();
   if (!service) throw new Error('Service not found');
   const duration = Number(service.duration_minutes);
-  if (!Number.isInteger(duration) || duration < SLOT_MINUTES || duration % SLOT_MINUTES) throw new Error('Service duration must be in 30-minute increments');
+  if (!Number.isInteger(duration) || duration < SLOT_MINUTES || duration % SLOT_MINUTES) throw new Error('Service duration must be in 15-minute increments');
   const day = new Date(`${date}T12:00:00Z`).getUTCDay();
   const hours = await env.DB.prepare('SELECT * FROM business_hours WHERE day_of_week=?').bind(day).first();
   if (!hours || !hours.is_open) return { date, service, slots: [] };
@@ -94,7 +94,7 @@ async function createBooking(request, env) {
   const duration = Number(service.duration_minutes);
   if (!Number.isInteger(duration) || duration < SLOT_MINUTES || duration % SLOT_MINUTES) return bad('This service is not configured with a valid duration', 409);
   const startMin = toMinutes(body.time);
-  if (startMin % SLOT_MINUTES !== 0) return bad('Bookings must start on a 30-minute boundary');
+  if (startMin % SLOT_MINUTES !== 0) return bad('Bookings must start on a 15-minute boundary');
   const endMin = startMin + duration;
   const day = new Date(`${body.date}T12:00:00Z`).getUTCDay();
   const hours = await env.DB.prepare('SELECT * FROM business_hours WHERE day_of_week=?').bind(day).first();
@@ -155,7 +155,7 @@ async function adminData(path, request, env) {
   if (path === '/api/admin/services' && request.method === 'POST') {
     if (!sameOrigin(request)) return bad('Forbidden',403);
     const b=await request.json(); const duration=Number(b.duration_minutes); const id=crypto.randomUUID();
-    if (!b.name || !Number.isInteger(duration) || duration < SLOT_MINUTES || duration % SLOT_MINUTES) return bad('Name and a duration in 30-minute increments are required');
+    if (!b.name || !Number.isInteger(duration) || duration < SLOT_MINUTES || duration % SLOT_MINUTES) return bad('Name and a duration in 15-minute increments are required');
     await env.DB.prepare('INSERT INTO services (id,name,description,price_label,duration_minutes,active,sort_order) VALUES (?,?,?,?,?,?,?)').bind(id,b.name,b.description||'',b.price_label||'POA',duration,b.active===false?0:1,Number(b.sort_order||0)).run();
     await notifyAdmin(env, 'Database updated — service added', `Service added: ${b.name} (${duration} minutes, ${b.price_label||'POA'})`);
     return json({ service: await env.DB.prepare('SELECT * FROM services WHERE id=?').bind(id).first() },201);
@@ -163,7 +163,7 @@ async function adminData(path, request, env) {
   if (path.startsWith('/api/admin/services/') && request.method === 'PATCH') {
     if (!sameOrigin(request)) return bad('Forbidden',403);
     const id=path.split('/').pop(); const b=await request.json(); const duration=Number(b.duration_minutes);
-    if (!b.name || !Number.isInteger(duration) || duration < SLOT_MINUTES || duration % SLOT_MINUTES) return bad('Name and a duration in 30-minute increments are required');
+    if (!b.name || !Number.isInteger(duration) || duration < SLOT_MINUTES || duration % SLOT_MINUTES) return bad('Name and a duration in 15-minute increments are required');
     await env.DB.prepare('UPDATE services SET name=?,description=?,price_label=?,duration_minutes=?,active=?,sort_order=? WHERE id=?').bind(b.name,b.description||'',b.price_label||'POA',duration,b.active?1:0,Number(b.sort_order||0),id).run();
     await notifyAdmin(env, 'Database updated — service changed', `Service updated: ${b.name} (ID: ${id})`);
     return json({ service: await env.DB.prepare('SELECT * FROM services WHERE id=?').bind(id).first() });
