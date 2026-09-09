@@ -151,6 +151,10 @@ async function adminData(path, request, env) {
     const rows = await env.DB.prepare(`SELECT b.*, s.name service_name, s.duration_minutes, s.price_label FROM bookings b JOIN services s ON s.id=b.service_id WHERE b.date BETWEEN ? AND ? ORDER BY b.date, b.start_time`).bind(url.searchParams.get('from') || '2000-01-01', url.searchParams.get('to') || '2100-12-31').all();
     return json({ bookings: rows.results || [] });
   }
+  if (path === '/api/admin/bookings' && request.method === 'POST') {
+    if (!sameOrigin(request)) return bad('Forbidden',403);
+    return createBooking(request, env);
+  }
   if (path === '/api/admin/services' && request.method === 'GET') return json({ services: await services(env,true) });
   if (path === '/api/admin/services' && request.method === 'POST') {
     if (!sameOrigin(request)) return bad('Forbidden',403);
