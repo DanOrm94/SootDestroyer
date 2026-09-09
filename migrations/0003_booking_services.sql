@@ -11,3 +11,14 @@ INSERT OR REPLACE INTO services(id,name,description,price_label,duration_minutes
   ('chimney-sweep-cctv','Chimney Sweep & CCTV Inspection','Chimney Sweep which includes covers sheeting up fire, rotary or manual sweep, vacuum clean, smoke evacuation check, certificate. CCTV Inspection to check condition of flue/chimney or blockages.','£125 - £150',120,'2 hrs',1,60),
   ('cctv-inspection','CCTV Inspection','CCTV Inspection to check condition of flue/chimney or blockages.','£60',60,'1 hr',1,70),
   ('other','Other (Do not select, if not listed above call or sms)','Do not select. If your service is not listed above, call or SMS us.','Free',15,'7 mins',1,80);
+
+-- The booking engine now uses 15-minute availability slots. Backfill existing bookings so their previously reserved 30-minute slots also block the new quarter-hour slots.
+WITH RECURSIVE slots(booking_id,date,slot_time,end_time) AS (
+  SELECT id,date,start_time,end_time FROM bookings WHERE status <> 'cancelled'
+  UNION ALL
+  SELECT booking_id,date,substr(time(slot_time,'+15 minutes'),1,5),end_time
+  FROM slots
+  WHERE time(slot_time,'+15 minutes') < end_time
+)
+INSERT OR IGNORE INTO booking_slots(date,slot_time,booking_id)
+SELECT date,slot_time,booking_id FROM slots;
