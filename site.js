@@ -47,7 +47,6 @@
     }
   }
 
-  // Make every Book now / booking.html navigation link jump to the contact form.
   document.querySelectorAll('a[href="booking.html"], a[href="/booking.html"]').forEach(link=>{
     link.addEventListener('click',e=>{
       e.preventDefault();
@@ -70,7 +69,40 @@
     if(d.open)document.querySelectorAll('.accordion details').forEach(x=>{if(x!==d)x.removeAttribute('open')});
   }));
 
-  // Quote requests are handled by quote.html and submitted to the Worker/D1 API.
+  const quoteForm=document.getElementById('quote-form');
+  quoteForm?.addEventListener('submit',async event=>{
+    event.preventDefault();
+    const button=quoteForm.querySelector('.submit-btn');
+    const original=button?.innerHTML;
+    if(button){button.disabled=true;button.innerHTML='Sending quote request…';}
+    const data=new FormData(quoteForm);
+    const payload={
+      name:data.get('Name'),
+      phone:data.get('Phone number'),
+      email:data.get('Email'),
+      total_price:data.get('Total Price'),
+      stove_choice:data.get('Stove Choice'),
+      flue_choice:data.get('Flue Choice'),
+      hearth_choice:data.get('Hearth Choice'),
+      beam_choice:data.get('Beam Choice'),
+      chamber_choice:data.get('Chamber Choice')
+    };
+    try{
+      const response=await fetch('/api/quotes',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
+      const result=await response.json().catch(()=>({}));
+      if(!response.ok) throw new Error(result.error||'Unable to submit quote request');
+      if(button) button.innerHTML='Quote request sent ✓';
+      quoteForm.reset();
+      setTimeout(()=>{if(button)button.innerHTML=original||'Submit quote request <span>↗</span>';},4000);
+    }catch(error){
+      if(button) button.innerHTML='Try again';
+      alert(error.message||'Unable to submit quote request. Please try again.');
+      setTimeout(()=>{if(button)button.innerHTML=original||'Submit quote request <span>↗</span>';},2500);
+    }finally{
+      if(button) button.disabled=false;
+    }
+  });
+
   document.querySelectorAll('form').forEach(form=>{
     if(form.id==='quote-form') return;
     form.addEventListener('submit',e=>{
