@@ -12,11 +12,15 @@ if (!document.querySelector('link[data-logo-blend]')) {
 
 if (nav) {
   if (!nav.querySelector('a[href="show-room.html"]')) {
-    const link = document.createElement("a"); link.href="show-room.html"; link.textContent="Show Room";
+    const link=document.createElement("a"); link.href="show-room.html"; link.textContent="Show Room";
     const cta=nav.querySelector(".nav-cta"); nav.insertBefore(link,cta||null);
   }
   if (!nav.querySelector('a[href="stove-packages.html"]')) {
     const link=document.createElement("a"); link.href="stove-packages.html"; link.textContent="Stove Packages";
+    const cta=nav.querySelector(".nav-cta"); nav.insertBefore(link,cta||null);
+  }
+  if (!nav.querySelector('a[href="quote.html"]')) {
+    const link=document.createElement("a"); link.href="quote.html"; link.textContent="Quote";
     const cta=nav.querySelector(".nav-cta"); nav.insertBefore(link,cta||null);
   }
   if (!nav.querySelector('a[href="https://burnright.co.uk/"]')) {
@@ -29,7 +33,6 @@ if (nav) {
   }
 }
 
-// Keep every phone link across the site pointing to the current business number.
 document.querySelectorAll('a[href^="tel:"]').forEach(link => {
   link.href = "tel:+447442174051";
   if (/^(Call us|Call|Phone)$/i.test(link.textContent.trim())) link.setAttribute("aria-label", "Call Soot Destroyer on 07442 174051");
