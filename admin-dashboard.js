@@ -4,6 +4,7 @@
   const iso=d=>{const x=new Date(d);return `${x.getFullYear()}-${String(x.getMonth()+1).padStart(2,'0')}-${String(x.getDate()).padStart(2,'0')}`};
   let calDate=new Date();calDate.setHours(12,0,0,0);$('calDate').value=iso(calDate);
   let services=[];
+  let showPastBookings=false;
 
   async function check(){
     try{
@@ -44,15 +45,33 @@
     }catch(err){msg.textContent=err.message;msg.className='customer-edit-message error';}
   }
 
-  async function loadBookings(){
-    const d=await api('/api/admin/bookings?from=2000-01-01&to=2100-12-31');
-    const rows=(d.bookings||[]).map(b=>`<tr><td><strong>${esc(b.date)}</strong><br>${esc(b.start_time)}–${esc(b.end_time)}</td><td>${customerEditHtml(b)}</td><td>${esc(b.service_name)}<br>${esc(b.price_label||'')}</td><td>${esc(b.notes)}</td><td><div class="status-actions"><select class="status-select ${esc(b.status)}" data-id="${esc(b.id)}"><option value="pending" ${b.status==='pending'?'selected':''}>Pending</option><option value="confirmed" ${b.status==='confirmed'?'selected':''}>Confirmed</option><option value="completed" ${b.status==='completed'?'selected':''}>Completed</option><option value="cancelled" ${b.status==='cancelled'?'selected':''}>Cancelled</option></select><button type="button" class="booking-cancel-btn" data-id="${esc(b.id)}" ${b.status==='cancelled'?'disabled':''}>${b.status==='cancelled'?'Cancelled':'Cancel booking'}</button></div></td></tr>`).join('');
-    $('bookingTable').innerHTML=`<table class="booking-table"><thead><tr><th>When</th><th>Customer</th><th>Service</th><th>Notes</th><th>Status</th></tr></thead><tbody>${rows||'<tr><td colspan="5">No bookings.</td></tr>'}</tbody></table>`;
+  function bookingIsUpcoming(b){
+    const now=new Date();
+    const appointment=new Date(`${b.date}T${b.start_time}:00`);
+    return appointment >= now;
+  }
+
+  function renderBookingRows(bookings){
+    const rows=bookings.map(b=>`<tr><td><strong>${esc(b.date)}</strong><br>${esc(b.start_time)}–${esc(b.end_time)}</td><td>${customerEditHtml(b)}</td><td>${esc(b.service_name)}<br>${esc(b.price_label||'')}</td><td>${esc(b.notes)}</td><td><div class="status-actions"><select class="status-select ${esc(b.status)}" data-id="${esc(b.id)}"><option value="pending" ${b.status==='pending'?'selected':''}>Pending</option><option value="confirmed" ${b.status==='confirmed'?'selected':''}>Confirmed</option><option value="completed" ${b.status==='completed'?'selected':''}>Completed</option><option value="cancelled" ${b.status==='cancelled'?'selected':''}>Cancelled</option></select><button type="button" class="booking-cancel-btn" data-id="${esc(b.id)}" ${b.status==='cancelled'?'disabled':''}>${b.status==='cancelled'?'Cancelled':'Cancel booking'}</button></div></td></tr>`).join('');
+    $('bookingTable').innerHTML=`<table class="booking-table"><thead><tr><th>When</th><th>Customer</th><th>Service</th><th>Notes</th><th>Status</th></tr></thead><tbody>${rows||`<tr><td colspan="5">No ${showPastBookings?'previous':'upcoming'} bookings.</td></tr>`}</tbody></table>`;
     $('bookingTable').querySelectorAll('.edit-customer-btn').forEach(btn=>btn.addEventListener('click',()=>{const wrap=btn.closest('.customer-details');wrap.querySelector('.customer-summary').hidden=true;btn.hidden=true;wrap.querySelector('.customer-edit').hidden=false;}));
     $('bookingTable').querySelectorAll('.cancel-customer-btn').forEach(btn=>btn.addEventListener('click',()=>{const wrap=btn.closest('.customer-details');wrap.querySelector('.customer-summary').hidden=false;wrap.querySelector('.edit-customer-btn').hidden=false;wrap.querySelector('.customer-edit').hidden=true;}));
     $('bookingTable').querySelectorAll('.save-customer-btn').forEach(btn=>btn.addEventListener('click',()=>saveCustomer(btn.dataset.id,btn.closest('.customer-edit'))));
     $('bookingTable').querySelectorAll('.status-select').forEach(s=>s.addEventListener('change',async()=>{const next=s.value;try{await changeBookingStatus(s.dataset.id,next);}catch(err){alert(err.message);await loadBookings();}}));
     $('bookingTable').querySelectorAll('.booking-cancel-btn').forEach(btn=>btn.addEventListener('click',async()=>{try{await changeBookingStatus(btn.dataset.id,'cancelled');}catch(err){alert(err.message);await loadBookings();}}));
+  }
+
+  async function loadBookings(){
+    const d=await api('/api/admin/bookings?from=2000-01-01&to=2100-12-31');
+    let bookings=(d.bookings||[]).slice().sort((a,b)=>`${a.date}T${a.start_time}`.localeCompare(`${b.date}T${b.start_time}`));
+    if(showPastBookings){
+      bookings=bookings.filter(b=>!bookingIsUpcoming(b));
+    }else{
+      bookings=bookings.filter(b=>bookingIsUpcoming(b) && b.status!=='cancelled');
+    }
+    renderBookingRows(bookings);
+    const toggle=$('togglePastBookings');
+    if(toggle){toggle.textContent=showPastBookings?'Show upcoming bookings':'Show previous bookings';toggle.classList.toggle('active',showPastBookings);}
   }
 
   function renderManualServices(){
@@ -90,6 +109,7 @@
   async function loadBlocked(){const d=await api('/api/admin/blocked');$('blockedList').innerHTML=(d.blocked||[]).map(b=>`<div class="blocked-item"><span><strong>${esc(b.date)}</strong> · ${esc(b.reason)}</span><button data-date="${esc(b.date)}">Remove</button>`).join('')||'<p>No blocked dates.</p>';$('blockedList').querySelectorAll('button').forEach(b=>b.addEventListener('click',async()=>{await api('/api/admin/blocked/'+encodeURIComponent(b.dataset.date),{method:'DELETE'});loadBlocked();loadCalendar()}));}
   $('blockedForm').addEventListener('submit',async e=>{e.preventDefault();await api('/api/admin/blocked',{method:'POST',body:JSON.stringify({date:$('blockedDate').value,reason:$('blockedReason').value||'Unavailable'})});e.target.reset();loadBlocked();loadCalendar()});
   $('refreshBookings').addEventListener('click',loadBookings);
+  $('togglePastBookings').addEventListener('click',()=>{showPastBookings=!showPastBookings;loadBookings()});
   async function loadAll(){await Promise.all([loadCalendar(),loadBookings(),loadServices(),loadHours(),loadBlocked()])}
   check();
 })();
