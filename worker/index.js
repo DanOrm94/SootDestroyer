@@ -64,8 +64,8 @@ async function availability(date, serviceId, env) {
   const service = await env.DB.prepare('SELECT * FROM services WHERE id=? AND active=1').bind(serviceId).first();
   if (!service) throw new Error('Service not found');
   const duration = Number(service.duration_minutes);
-  if (!Number.isInteger(duration) || duration < SLOT_MINUTES || duration % SLOT_MINUTES) {
-    throw new Error(`Service duration must be in ${SLOT_MINUTES}-minute increments`);
+  if (!Number.isInteger(duration) || duration < SLOT_MINUTES) {
+    throw new Error(`Service duration must be at least ${SLOT_MINUTES} minutes`);
   }
   const day = new Date(`${date}T12:00:00Z`).getUTCDay();
   const hours = await env.DB.prepare('SELECT * FROM business_hours WHERE day_of_week=?').bind(day).first();
@@ -96,7 +96,7 @@ async function createBooking(request, env, options = {}) {
   const service = await env.DB.prepare('SELECT * FROM services WHERE id=? AND active=1').bind(body.service_id).first();
   if (!service) return bad('Service is no longer available', 409);
   const duration = Number(service.duration_minutes);
-  if (!Number.isInteger(duration) || duration < SLOT_MINUTES || duration % SLOT_MINUTES) return bad(`This service must use a duration in ${SLOT_MINUTES}-minute increments`, 409);
+  if (!Number.isInteger(duration) || duration < SLOT_MINUTES) return bad(`This service must use a duration of at least ${SLOT_MINUTES} minutes`, 409);
   const startMin = toMinutes(body.time);
   if (startMin % 60 !== 0) return bad('Bookings must start on the hour', 409);
   const endMin = startMin + duration;
@@ -172,7 +172,7 @@ async function adminData(path, request, env) {
   if (path === '/api/admin/services' && request.method === 'POST') {
     if (!sameOrigin(request)) return bad('Forbidden',403);
     const b = await request.json(); const duration = Number(b.duration_minutes); const id = crypto.randomUUID();
-    if (!b.name || !Number.isInteger(duration) || duration < SLOT_MINUTES || duration % SLOT_MINUTES) return bad(`Name and a duration in ${SLOT_MINUTES}-minute increments are required`);
+    if (!b.name || !Number.isInteger(duration) || duration < SLOT_MINUTES) return bad(`Name and a duration of at least ${SLOT_MINUTES} minutes are required`);
     await env.DB.prepare('INSERT INTO services (id,name,description,price_label,duration_minutes,active,sort_order) VALUES (?,?,?,?,?,?,?)').bind(id,b.name,b.description||'',b.price_label||'POA',duration,b.active===false?0:1,Number(b.sort_order||0)).run();
     await notifyAdmin(env, 'Database updated — service added', `Service added: ${b.name} (${duration} minutes, ${b.price_label||'POA'})`);
     return json({ service: await env.DB.prepare('SELECT * FROM services WHERE id=?').bind(id).first() },201);
@@ -180,7 +180,7 @@ async function adminData(path, request, env) {
   if (path.startsWith('/api/admin/services/') && request.method === 'PATCH') {
     if (!sameOrigin(request)) return bad('Forbidden',403);
     const id = path.split('/').pop(); const b = await request.json(); const duration = Number(b.duration_minutes);
-    if (!b.name || !Number.isInteger(duration) || duration < SLOT_MINUTES || duration % SLOT_MINUTES) return bad(`Name and a duration in ${SLOT_MINUTES}-minute increments are required`);
+    if (!b.name || !Number.isInteger(duration) || duration < SLOT_MINUTES) return bad(`Name and a duration of at least ${SLOT_MINUTES} minutes are required`);
     await env.DB.prepare('UPDATE services SET name=?,description=?,price_label=?,duration_minutes=?,active=?,sort_order=? WHERE id=?').bind(b.name,b.description||'',b.price_label||'POA',duration,b.active?1:0,Number(b.sort_order||0),id).run();
     await notifyAdmin(env, 'Database updated — service changed', `Service updated: ${b.name} (ID: ${id}, ${duration} minutes)`);
     return json({ service: await env.DB.prepare('SELECT * FROM services WHERE id=?').bind(id).first() });
@@ -221,9 +221,9 @@ async function adminData(path, request, env) {
       const phone = String(b.phone ?? booking.phone).trim();
       const email = String(b.email ?? booking.email).trim().toLowerCase();
       const address = String(b.address ?? booking.address ?? '').trim();
-      const postcode = String(b.postcode ?? booking.postcode).trim();
+      const postcode = String(b.postcode ?? booking.postcode ?? '').trim();
       const notes = String(b.notes ?? booking.notes ?? '').trim();
-      if (!name || !phone || !email || !postcode) return bad('Name, phone, email and postcode are required');
+      if (!name || !phone || !email) return bad('Name, phone and email are required');
       if (!/^\S+@\S+\.\S+$/.test(email)) return bad('Invalid email address');
       await env.DB.prepare('UPDATE bookings SET name=?,phone=?,email=?,address=?,postcode=?,notes=?,updated_at=? WHERE id=?').bind(name,phone,email,address,postcode,notes,nowIso(),id).run();
       await notifyAdmin(env, 'Database updated — customer details changed', `Customer details updated for booking ${id}: ${name}`);
