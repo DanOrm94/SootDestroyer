@@ -22,8 +22,15 @@
   };
   dateEl.min=iso(today); dateEl.value=iso(today);
   const money=s=>s.price_label || 'POA';
-  const durationLabels={'free-installation-survey':'1 hr','chimney-sweep':'1 hr 15 mins','chimney-sweep-2':'1 hr 45 mins','chimney-sweep-3':'2 hrs 30 mins','chimney-sweep-4':'3 hrs 15 mins','chimney-sweep-cctv':'2 hrs','cctv-inspection':'1 hr','other':'7 mins'};
-  const duration=s=>durationLabels[s.id] || `${s.duration_minutes} mins`;
+  const formatDuration=minutes=>{
+    const n=Number(minutes);
+    if(!Number.isFinite(n)) return '';
+    const hours=Math.floor(n/60), mins=n%60;
+    if(hours && mins) return `${hours} hr${hours===1?'':'s'} ${mins} mins`;
+    if(hours) return `${hours} hr${hours===1?'':'s'}`;
+    return `${mins} mins`;
+  };
+  const duration=s=>formatDuration(s.duration_minutes);
   function renderServices(){
     serviceEl.innerHTML=services.map(s=>`<option value="${s.id}">${s.name}</option>`).join('');
     choicesEl.innerHTML=services.map((s,i)=>`<button type="button" class="service-card${i===0?' selected':''}" data-service="${s.id}"><span class="service-card-main"><strong>${s.name}</strong><span>${duration(s)} · ${money(s)}</span></span><span class="service-card-desc">${s.description||''}</span><span class="service-card-arrow">Book</span></button>`).join('');
@@ -47,7 +54,7 @@
     selectedTime.value='';
     summaryEl.textContent=`${service.name} · ${duration(service)} appointment · ${money(service)}`;
     slotsEl.innerHTML='<div class="empty-state">Checking live availability…</div>';
-    const res=await fetch(`/api/availability?date=${encodeURIComponent(date)}&service=${encodeURIComponent(service.id)}&v=3`); const data=await res.json();
+    const res=await fetch(`/api/availability?date=${encodeURIComponent(date)}&service=${encodeURIComponent(service.id)}&v=4`); const data=await res.json();
     if(!res.ok){slotsEl.innerHTML=`<div class="empty-state">${data.error||'Unable to load availability.'}</div>`;return;}
     const hourlySlots=(data.slots||[]).filter(t=>/^\d{2}:00$/.test(t));
     if(!hourlySlots.length){slotsEl.innerHTML='<div class="empty-state">No appointments are available on this date. Try another day.</div>';return;}
