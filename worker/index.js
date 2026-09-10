@@ -1,5 +1,5 @@
 const SESSION_TTL = 60 * 60 * 12;
-const SLOT_MINUTES = 15;
+const SLOT_MINUTES = 5;
 
 const json = (data, status = 200, extra = {}) => new Response(JSON.stringify(data), {
   status,
@@ -29,8 +29,6 @@ function sameOrigin(request) {
   return !origin || origin === new URL(request.url).origin;
 }
 
-// Keep these as real digit/character regexes. A previous deployment contained
-// double-escaped patterns, so valid ISO dates such as 2026-09-10 were rejected.
 function localDate(date) { return /^\d{4}-\d{2}-\d{2}$/.test(String(date || '')); }
 function localTime(time) { return /^\d{2}:\d{2}$/.test(String(time || '')); }
 function toMinutes(t) { const [h,m] = t.split(':').map(Number); return h * 60 + m; }
@@ -67,7 +65,7 @@ async function availability(date, serviceId, env) {
   if (!service) throw new Error('Service not found');
   const duration = Number(service.duration_minutes);
   if (!Number.isInteger(duration) || duration < SLOT_MINUTES || duration % SLOT_MINUTES) {
-    throw new Error('Service duration must be in 15-minute increments');
+    throw new Error(`Service duration must be in ${SLOT_MINUTES}-minute increments`);
   }
   const day = new Date(`${date}T12:00:00Z`).getUTCDay();
   const hours = await env.DB.prepare('SELECT * FROM business_hours WHERE day_of_week=?').bind(day).first();
@@ -77,7 +75,7 @@ async function availability(date, serviceId, env) {
   const busy = await env.DB.prepare('SELECT slot_time FROM booking_slots WHERE date=?').bind(date).all();
   const busySet = new Set((busy.results || []).map(r => r.slot_time));
   const open = toMinutes(hours.open_time), close = toMinutes(hours.close_time), slots = [];
-  for (let start = open; start + duration <= close; start += SLOT_MINUTES) {
+  for (let start = open; start + duration <= close; start += 60) {
     let free = true;
     for (let m = start; m < start + duration; m += SLOT_MINUTES) {
       if (busySet.has(fromMinutes(m))) { free = false; break; }
@@ -98,9 +96,9 @@ async function createBooking(request, env, options = {}) {
   const service = await env.DB.prepare('SELECT * FROM services WHERE id=? AND active=1').bind(body.service_id).first();
   if (!service) return bad('Service is no longer available', 409);
   const duration = Number(service.duration_minutes);
-  if (!Number.isInteger(duration) || duration < SLOT_MINUTES || duration % SLOT_MINUTES) return bad('This service is not configured with a valid duration', 409);
+  if (!Number.isInteger(duration) || duration < SLOT_MINUTES || duration % SLOT_MINUTES) return bad(`This service must use a duration in ${SLOT_MINUTES}-minute increments`, 409);
   const startMin = toMinutes(body.time);
-  if (startMin % SLOT_MINUTES !== 0) return bad('Bookings must start on a 15-minute boundary');
+  if (startMin % 60 !== 0) return bad('Bookings must start on the hour', 409);
   const endMin = startMin + duration;
   const day = new Date(`${body.date}T12:00:00Z`).getUTCDay();
   const hours = await env.DB.prepare('SELECT * FROM business_hours WHERE day_of_week=?').bind(day).first();
@@ -174,7 +172,7 @@ async function adminData(path, request, env) {
   if (path === '/api/admin/services' && request.method === 'POST') {
     if (!sameOrigin(request)) return bad('Forbidden',403);
     const b = await request.json(); const duration = Number(b.duration_minutes); const id = crypto.randomUUID();
-    if (!b.name || !Number.isInteger(duration) || duration < SLOT_MINUTES || duration % SLOT_MINUTES) return bad('Name and a duration in 15-minute increments are required');
+    if (!b.name || !Number.isInteger(duration) || duration < SLOT_MINUTES || duration % SLOT_MINUTES) return bad(`Name and a duration in ${SLOT_MINUTES}-minute increments are required`);
     await env.DB.prepare('INSERT INTO services (id,name,description,price_label,duration_minutes,active,sort_order) VALUES (?,?,?,?,?,?,?)').bind(id,b.name,b.description||'',b.price_label||'POA',duration,b.active===false?0:1,Number(b.sort_order||0)).run();
     await notifyAdmin(env, 'Database updated — service added', `Service added: ${b.name} (${duration} minutes, ${b.price_label||'POA'})`);
     return json({ service: await env.DB.prepare('SELECT * FROM services WHERE id=?').bind(id).first() },201);
@@ -182,9 +180,9 @@ async function adminData(path, request, env) {
   if (path.startsWith('/api/admin/services/') && request.method === 'PATCH') {
     if (!sameOrigin(request)) return bad('Forbidden',403);
     const id = path.split('/').pop(); const b = await request.json(); const duration = Number(b.duration_minutes);
-    if (!b.name || !Number.isInteger(duration) || duration < SLOT_MINUTES || duration % SLOT_MINUTES) return bad('Name and a duration in 15-minute increments are required');
+    if (!b.name || !Number.isInteger(duration) || duration < SLOT_MINUTES || duration % SLOT_MINUTES) return bad(`Name and a duration in ${SLOT_MINUTES}-minute increments are required`);
     await env.DB.prepare('UPDATE services SET name=?,description=?,price_label=?,duration_minutes=?,active=?,sort_order=? WHERE id=?').bind(b.name,b.description||'',b.price_label||'POA',duration,b.active?1:0,Number(b.sort_order||0),id).run();
-    await notifyAdmin(env, 'Database updated — service changed', `Service updated: ${b.name} (ID: ${id})`);
+    await notifyAdmin(env, 'Database updated — service changed', `Service updated: ${b.name} (ID: ${id}, ${duration} minutes)`);
     return json({ service: await env.DB.prepare('SELECT * FROM services WHERE id=?').bind(id).first() });
   }
   if (path === '/api/admin/hours' && request.method === 'GET') return json({ hours:(await env.DB.prepare('SELECT * FROM business_hours ORDER BY day_of_week').all()).results||[] });
@@ -260,12 +258,9 @@ async function handleApi(request, env) {
 }
 
 export default {
-  async fetch(request, env) {
+  async fetch(request, env, ctx) {
     const url = new URL(request.url);
-    if (url.pathname.startsWith('/api/')) {
-      try { return await handleApi(request,env); }
-      catch (error) { console.error(error); return bad('Server error',500); }
-    }
+    if (url.pathname.startsWith('/api/')) return handleApi(request, env);
     return env.ASSETS.fetch(request);
   }
 };
