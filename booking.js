@@ -47,10 +47,11 @@
     selectedTime.value='';
     summaryEl.textContent=`${service.name} · ${duration(service)} appointment · ${money(service)}`;
     slotsEl.innerHTML='<div class="empty-state">Checking live availability…</div>';
-    const res=await fetch(`/api/availability?date=${encodeURIComponent(date)}&service=${encodeURIComponent(service.id)}&v=2`); const data=await res.json();
+    const res=await fetch(`/api/availability?date=${encodeURIComponent(date)}&service=${encodeURIComponent(service.id)}&v=3`); const data=await res.json();
     if(!res.ok){slotsEl.innerHTML=`<div class="empty-state">${data.error||'Unable to load availability.'}</div>`;return;}
-    if(!data.slots?.length){slotsEl.innerHTML='<div class="empty-state">No appointments are available on this date. Try another day.</div>';return;}
-    slotsEl.innerHTML=data.slots.map(t=>`<button class="slot" type="button" data-time="${t}">${t}</button>`).join('');
+    const hourlySlots=(data.slots||[]).filter(t=>/^\d{2}:00$/.test(t));
+    if(!hourlySlots.length){slotsEl.innerHTML='<div class="empty-state">No appointments are available on this date. Try another day.</div>';return;}
+    slotsEl.innerHTML=hourlySlots.map(t=>`<button class="slot" type="button" data-time="${t}">${t}</button>`).join('');
     slotsEl.querySelectorAll('.slot').forEach(btn=>btn.addEventListener('click',()=>{slotsEl.querySelectorAll('.slot').forEach(x=>x.classList.remove('selected'));btn.classList.add('selected');selectedTime.value=btn.dataset.time; message.className='booking-message'; message.textContent='';}));
   }
   function shift(days){const current=getDate(); if(!current)return; const d=new Date(`${current}T12:00:00`);d.setDate(d.getDate()+days);if(d<today)return;dateEl.value=iso(d);loadSlots();}
