@@ -213,6 +213,23 @@ async function adminData(path, request, env) {
     const id = path.split('/').pop(); const b = await request.json();
     const booking = await env.DB.prepare('SELECT * FROM bookings WHERE id=?').bind(id).first();
     if (!booking) return bad('Booking not found',404);
+
+    const editable = ['name','phone','email','address','postcode','notes'];
+    const hasCustomerEdit = editable.some(key => Object.prototype.hasOwnProperty.call(b,key));
+    if (hasCustomerEdit) {
+      const name = String(b.name ?? booking.name).trim();
+      const phone = String(b.phone ?? booking.phone).trim();
+      const email = String(b.email ?? booking.email).trim().toLowerCase();
+      const address = String(b.address ?? booking.address ?? '').trim();
+      const postcode = String(b.postcode ?? booking.postcode).trim();
+      const notes = String(b.notes ?? booking.notes ?? '').trim();
+      if (!name || !phone || !email || !postcode) return bad('Name, phone, email and postcode are required');
+      if (!/^\S+@\S+\.\S+$/.test(email)) return bad('Invalid email address');
+      await env.DB.prepare('UPDATE bookings SET name=?,phone=?,email=?,address=?,postcode=?,notes=?,updated_at=? WHERE id=?').bind(name,phone,email,address,postcode,notes,nowIso(),id).run();
+      await notifyAdmin(env, 'Database updated — customer details changed', `Customer details updated for booking ${id}: ${name}`);
+      return json({ok:true, booking:await env.DB.prepare('SELECT * FROM bookings WHERE id=?').bind(id).first()});
+    }
+
     if (!['pending','confirmed','completed','cancelled'].includes(b.status)) return bad('Invalid status');
     if (booking.status === 'cancelled' && b.status !== 'cancelled') return bad('Cancelled bookings cannot be reactivated; create a new booking',409);
     if (b.status === 'cancelled') {
@@ -258,7 +275,7 @@ async function handleApi(request, env) {
 }
 
 export default {
-  async fetch(request, env, ctx) {
+  async fetch(request, env) {
     const url = new URL(request.url);
     if (url.pathname.startsWith('/api/')) return handleApi(request, env);
     return env.ASSETS.fetch(request);
