@@ -38,6 +38,14 @@
                     </div>
                     <div class="manual-actions"><button type="submit" class="small-btn">Save booking</button><button type="button" id="cancelManualBooking" class="cancel-btn">Cancel</button><span id="manualBookingMessage"></span></div>
                 </form>
+                <form id="editBookingForm" class="manual-booking edit-booking" hidden>
+                    <div class="manual-booking-head"><div><strong>Edit booking date &amp; time</strong><span>The service duration is applied automatically and the old time is released.</span></div></div>
+                    <div class="manual-grid">
+                        <label>Date<input id="editBookingDate" type="date" required></label>
+                        <label>Time<input id="editBookingTime" type="time" step="3600" required></label>
+                    </div>
+                    <div class="manual-actions"><button type="submit" class="small-btn">Save changes</button><button type="button" id="cancelEditBooking" class="cancel-btn">Cancel</button><span id="editBookingMessage"></span></div>
+                </form>
                 <div id="bookingTable" class="table-wrap"></div>
             </section>
             <section id="services" class="panel"><div class="panel-head"><div><span class="eyebrow">What customers can book</span><h2>Services</h2></div><button id="addService" class="small-btn">Add service</button></div><div id="serviceList" class="service-list"></div></section>
