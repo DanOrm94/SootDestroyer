@@ -53,6 +53,26 @@ async function notifyAdmin(env, subject, text) {
   }
 }
 
+async function notifyCustomer(env, email, subject, text) {
+  const recipient = String(email || '').trim().toLowerCase();
+  if (!env.RESEND_API_KEY || !/^\\S+@\\S+\\.\\S+$/.test(recipient)) return;
+  try {
+    const response = await fetch('https://api.resend.com/emails', {
+      method: 'POST',
+      headers: { 'Authorization': `Bearer ${env.RESEND_API_KEY}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        from: env.RESEND_FROM || 'Soot Destroyer <notifications@sootdestroyer.co.uk>',
+        to: [recipient],
+        subject,
+        text
+      })
+    });
+    if (!response.ok) console.error('Customer email failed:', response.status, await response.text());
+  } catch (error) {
+    console.error('Customer email failed:', error);
+  }
+}
+
 async function services(env, includeInactive = false) {
   const query = includeInactive
     ? 'SELECT * FROM services ORDER BY sort_order, name'
@@ -180,6 +200,30 @@ async function createBooking(request, env) {
     ].join('\n')
   );
 
+  await notifyCustomer(
+    env,
+    body.email,
+    'Your Soot Destroyer booking is confirmed',
+    [
+      `Hi ${String(body.name).trim()},`,
+      '',
+      'Thank you for booking with Soot Destroyer. Your appointment is confirmed.',
+      '',
+      `Service: ${service.name}`,
+      `Date: ${body.date}`,
+      `Time: ${body.time}–${fromMinutes(endMin)}`,
+      `Address: ${String(body.address || '').trim() || 'Not provided'}`,
+      `Postcode: ${String(body.postcode).trim()}`,
+      `Booking reference: ${id}`,
+      '',
+      'If you need to change your appointment, please contact Liam on 07442 174051.',
+      '',
+      'Thank you,',
+      'Soot Destroyer',
+      'https://sootdestroyer.co.uk'
+    ].join('\\n')
+  );
+
   return json({
     ok: true,
     booking: {
@@ -274,6 +318,27 @@ async function moveBooking(id, body, env) {
   }
 
   await notifyAdmin(env, 'Database updated — booking moved', `Booking ${id} was moved from ${booking.date} ${booking.start_time} to ${date} ${time}. New end time: ${fromMinutes(endMin)}.`);
+  await notifyCustomer(
+    env,
+    booking.email,
+    'Your Soot Destroyer booking has been rescheduled',
+    [
+      `Hi ${booking.name},`,
+      '',
+      'Your Soot Destroyer appointment has been rescheduled. Please see the updated details below.',
+      '',
+      `Service: ${service.name}`,
+      `New date: ${date}`,
+      `New time: ${time}–${fromMinutes(endMin)}`,
+      `Booking reference: ${id}`,
+      '',
+      'If you have any questions, please contact Liam on 07442 174051.',
+      '',
+      'Thank you,',
+      'Soot Destroyer',
+      'https://sootdestroyer.co.uk'
+    ].join('\\n')
+  );
   return json({ ok: true, booking: await env.DB.prepare('SELECT * FROM bookings WHERE id=?').bind(id).first() });
 }
 
