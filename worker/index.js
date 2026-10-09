@@ -55,7 +55,7 @@ async function notifyAdmin(env, subject, text) {
 
 async function notifyCustomer(env, email, subject, text) {
   const recipient = String(email || '').trim().toLowerCase();
-  if (!env.RESEND_API_KEY || !/^\\S+@\\S+\\.\\S+$/.test(recipient)) return;
+  if (!env.RESEND_API_KEY || !/^\S+@\S+\.\S+$/.test(recipient)) return;
   try {
     const response = await fetch('https://api.resend.com/emails', {
       method: 'POST',
