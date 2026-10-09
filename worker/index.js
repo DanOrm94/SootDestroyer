@@ -221,7 +221,7 @@ async function createBooking(request, env) {
       'Thank you,',
       'Soot Destroyer',
       'https://sootdestroyer.co.uk'
-    ].join('\\n')
+    ].join('\n')
   );
 
   return json({
@@ -337,7 +337,7 @@ async function moveBooking(id, body, env) {
       'Thank you,',
       'Soot Destroyer',
       'https://sootdestroyer.co.uk'
-    ].join('\\n')
+    ].join('\n')
   );
   return json({ ok: true, booking: await env.DB.prepare('SELECT * FROM bookings WHERE id=?').bind(id).first() });
 }
